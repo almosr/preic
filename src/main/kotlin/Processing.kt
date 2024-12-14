@@ -360,13 +360,23 @@ class Processing(
                     //Return line content without the label
                     to content.substring(index + 1).trim())
 
-            LABEL_PREFIX_LITERAL -> (Label.Literal(
-                name = label.drop(1),
-                originalFormat = originalLabel,
-                value = extractLiteralValue(content, content.substring(index + 1).trim())
-            )
+            LABEL_PREFIX_LITERAL -> {
+                val value = extractLiteralValue(content.substring(index + 1).trim())
+
+                //When value could not be extracted then this is not a literal label definition,
+                //but rather a label used at the beginning of the line.
+                    ?: return content
+
+                Pair(
+                    Label.Literal(
+                        name = label.drop(1),
+                        originalFormat = originalLabel,
+                        value = value
+                    ),
                     //The entire line was used by literal label
-                    to "")
+                    ""
+                )
+            }
 
             //Other kind of labels or escaped characters
             else -> {
@@ -387,16 +397,17 @@ class Processing(
         return restOfLine
     }
 
-    private fun extractLiteralValue(line: String, content: String): String {
-        //Check for missing value definition
-        if (content.isBlank()) throw Exception("Empty literal value for label: $line")
+    private fun extractLiteralValue(content: String): String? =
+        when {
+            //Check for missing value definition, when empty then this is not a definition
+            content.isBlank() -> null
 
-        //Check for missing equal sign at the beginning
-        if (content[0] != '=') throw Exception("Invalid literal value for label: $line")
+            //Check for missing equal sign at the beginning, when missing then this is not a definition
+            content[0] != '=' -> null
 
-        //Remove equal sign and return the rest as literal value
-        return content.drop(1)
-    }
+            //Remove equal sign and return the rest as literal value
+            else -> content.drop(1)
+        }
 
     companion object {
         private const val MAX_BASIC_LINE_NUMBER = 63999

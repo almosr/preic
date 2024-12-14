@@ -323,7 +323,8 @@ will be inserted instead. It is possible to define a piece of BASIC code as lite
 times in shorter form. (Sort of like macros in other languages, but without parameters at the moment.)
 
 Literal labels cannot be re-defined, when a literal definition already exists anywhere in the source code and defined
-again then processing stops with an error.
+again then processing stops with an error. When a literal label is used (instead of defined) at the beginning of the
+line then it must not be followed by an equal (`=`) sign.
 
 Here is an example input for using a literal label:
 
