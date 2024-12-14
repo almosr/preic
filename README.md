@@ -133,6 +133,8 @@ Parameters are:
 
 - `<input BASIC source file>` - BASIC source file to be pre-processed.
 - `-l <label list file>` - optional path to a file for label definition dump.
+- `-ld <library dir>` - optional path to a directory where included files will be searched also. This parameter makes it
+  possible to use a collection of routines or definitions from a generic folder outside the current project.
 - `-o <optim flags>` - optimisation flags, when set then the relevant processing will be completed on the output:
     * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and
       inside strings.

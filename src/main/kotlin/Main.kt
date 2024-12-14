@@ -1,4 +1,4 @@
-import models.Optimizations
+import models.Optimization
 import models.ProcessingParameters
 import kotlin.system.exitProcess
 
@@ -33,10 +33,13 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
     //Get label file name
     val labelFileName = getParameter(params, "-l")
 
+    //Get library dir path
+    val libraryDirPath = getParameter(params, "-ld")
+
     //Get optimizations
     val optims = getParameter(params, "-o")
         ?.map { flag ->
-            Optimizations.entries.firstOrNull { it.commandLineFlag == flag }
+            Optimization.entries.firstOrNull { it.commandLineFlag == flag }
                 ?: throw Exception("Unrecognized optimization flag: $flag")
         } ?: emptyList()
 
@@ -48,7 +51,13 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
         throw Exception("Unrecognized command line parameters: ${params.joinToString(" ")}")
     }
 
-    return ProcessingParameters(inputFileName, outputFileName, labelFileName, optims)
+    return ProcessingParameters(
+        inputFileName = inputFileName,
+        outputFileName = outputFileName,
+        libraryDirPath = libraryDirPath,
+        labelFileName = labelFileName,
+        optimizations = optims
+    )
 }
 
 private fun getParameter(params: MutableList<String>, parameterName: String): String? =
@@ -64,6 +73,7 @@ private fun printUsage() {
     println("Usage: java -jar preic.jar <input BASIC source file> [-l <label list file>] [-o <opt flags>] [output pre-processed file]\n")
     println("<input BASIC source file> - BASIC source file to be pre-processed\n")
     println("-l <label list file> - optional path to a file for label definition dump\n")
+    println("-ld <library dir> - optional path to a directory where included files will be searched also\n")
     println(
         "-o <opt flags> - optional optimisation flags, when set then the relevant processing will be completed on the output:\n" +
                 "  * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and\n" +

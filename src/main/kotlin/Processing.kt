@@ -1,5 +1,5 @@
 import models.Label
-import models.Optimizations
+import models.Optimization
 import models.ProcessingParameters
 import models.SourceLine
 import java.io.File
@@ -40,7 +40,7 @@ class Processing(
     private fun outputProcessedSource(source: List<SourceLine>) {
 
         //Turn on white space otimization when included in optimization flags
-        val optimizeWhiteSpace = processingParameters.optimizations.contains(Optimizations.REMOVE_WHITE_SPACE)
+        val optimizeWhiteSpace = processingParameters.optimizations.contains(Optimization.REMOVE_WHITE_SPACE)
 
         //Output pre-processed source with line numbers
         source.forEach { line ->
@@ -151,11 +151,13 @@ class Processing(
 
     private fun readSource(fileName: String): List<SourceLine> {
 
+        //Create the File instance from file name, or when it doesn't exist then also search the library dir
+        val file = findFile(fileName)
+
         try {
             val source = mutableListOf<SourceLine>()
 
             var lineNumber = 1
-            val file = File(fileName)
             file.inputStream().use { inputStream ->
                 inputStream.bufferedReader().forEachLine {
 
@@ -193,8 +195,23 @@ class Processing(
         }
     }
 
+    private fun findFile(fileName: String) =
+
+        //When the file exists as it is referred by the file name then use it
+        File(fileName).takeIf { it.exists() } ?: run {
+            //File doesn't exist, try to find it in library dir
+            processingParameters.libraryDirPath?.let {
+                File(it).resolve(fileName)
+            }?.apply {
+                if (!exists()) {
+                    throw Exception("File could not be found: $fileName, also searched in: ${processingParameters.libraryDirPath}")
+                }
+            } ?: throw Exception("File could not be found: $fileName")
+        }
+
+
     private fun joinLines(input: List<SourceLine>): List<SourceLine> {
-        if (!processingParameters.optimizations.contains(Optimizations.JOIN_LINES)) {
+        if (!processingParameters.optimizations.contains(Optimization.JOIN_LINES)) {
             //Join lines optim is off, return original source without any change
             return input
         }
