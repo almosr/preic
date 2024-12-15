@@ -277,8 +277,9 @@ second characters run out then increases the first character and goes on.
 Debugging the pre-processed code could be a bit of a challenge, though. See
 the [debugging section below](#debugging-the-processed-code).
 
-In case you need string variable when variable name is postfixed with dollar sign (`$`) or integer variable when name is
-postfixed with percentage sign (`%`) then you can add the postfix to the variable label.
+When you need string variable then according to the BASIC language rules the variable name should be postfixed with
+dollar sign (`$`) or for an integer variable postfixed with percentage sign (`%`). In this case you can add the postfix
+to the variable label.
 
 For example:
 
@@ -293,9 +294,9 @@ Would be turned into:
 
 ```
 0 pe$="fruit"
-1 pe%=42
-2 pe=3.14
-3 print pe$;pe%;pe
+1 pf%=42
+2 pg=3.14
+3 print pe$;pf%;pg
 ```
 
 Then the output would be:
@@ -303,6 +304,9 @@ Then the output would be:
 ```
 fruit 42  3.14
 ```
+
+While this format is not required, it is easier to read and understand than adding the postfix after the closing curly
+bracket, like: `{$pear}$="fruit"`. However, this format is also supported.
 
 #### Literal label
 

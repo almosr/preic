@@ -4,20 +4,16 @@ class VariableNameRepository {
 
     fun getNewName(name: String): String {
 
-        //Is this variable name coming with a type postfix?
-        val postfix = if (name.last() in listOf('$', '%')) {
-            name.last().toString()
-        } else {
-            ""
-        }
-
         //Very unlikely, but have we reached the theoretical limit of names?
         if (variableNames.size == MAX_NAMES) {
             throw Exception("Too many variable names have been generated")
         }
 
         //Try to use the first two characters of the name if possible
-        val simplifiedName = name.take(2).lowercase() + postfix
+        val simplifiedName = name
+            //Take up to two characters from the beginning of the name
+            .take(2).lowercase()
+
         if (simplifiedName.isValidName()) {
             variableNames.add(simplifiedName)
             return simplifiedName
@@ -27,11 +23,15 @@ class VariableNameRepository {
         var newName = simplifiedName
         while (!newName.isValidName()) {
 
-            //Bump second character
-            val secondChar = POSSIBLE_CHARACTERS.indexOf(newName[1]) + 1
+            //Bump second character, when doesn't exist then start from beginning
+            val secondChar = if (newName.length > 1) {
+                POSSIBLE_CHARACTERS.indexOf(newName[1]) + 1
+            } else {
+                0
+            }
             if (POSSIBLE_CHARACTERS.size > secondChar) {
                 //Still within bounds
-                newName = name(newName[0], POSSIBLE_CHARACTERS[secondChar], postfix)
+                newName = name(newName[0], POSSIBLE_CHARACTERS[secondChar])
                 continue
             }
 
@@ -39,12 +39,12 @@ class VariableNameRepository {
             val firstChar = LETTERS.indexOf(newName[0]) + 1
             if (LETTERS.size > firstChar) {
                 //Still within bounds
-                newName = name(LETTERS[firstChar], POSSIBLE_CHARACTERS[0], postfix)
+                newName = name(LETTERS[firstChar], POSSIBLE_CHARACTERS[0])
                 continue
             }
 
             //Ran out of letters, start from the beginning of the combinations
-            name(LETTERS[0], POSSIBLE_CHARACTERS[0], postfix)
+            newName = name(LETTERS[0], POSSIBLE_CHARACTERS[0])
         }
 
         variableNames.add(newName)
@@ -54,7 +54,7 @@ class VariableNameRepository {
     private fun String.isValidName() =
         !variableNames.contains(this) && !FORBIDDEN_NAMES.contains(this.take(2))
 
-    private fun name(firstChar: Char, secondChar: Char, postfix: String) = "$firstChar$secondChar$postfix"
+    private fun name(firstChar: Char, secondChar: Char) = "$firstChar$secondChar"
 
     companion object {
         private val DIGITS = ('0'..'9').toList()

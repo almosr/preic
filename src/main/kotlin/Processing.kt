@@ -78,12 +78,22 @@ class Processing(
         }
     }
 
-    private fun createVariableLabel(name: String, originalLabel: String) =
-        Label.Variable(
+    private fun createVariableLabel(name: String, originalLabel: String): Label.Variable {
+
+        //Is this variable name coming with a type postfix?
+        //Separate base name and postfix
+        val (baseName, postfix) = if (name.last() in listOf('$', '%')) {
+            (name.dropLast(1) to name.last().toString())
+        } else {
+            (name to "")
+        }
+
+        return Label.Variable(
             name = name,
             originalFormat = originalLabel,
-            basicName = variableNameRepository.getNewName(name)
+            basicName = variableNameRepository.getNewName(baseName) + postfix
         ).also { labels[originalLabel] = it }
+    }
 
     private fun optimizeWhiteSpace(lineContent: String): String {
         //Is there a REM command in the line? If yes then stop processing white space there.
