@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - When literal label is located at the beginning of the line, but not followed by equal sign then it is considered a
   label usage instead of definition and processing doesn't throw an error.
+- Literal labels can be embedded into each other to create more complex structures, infinite recursion is detected.
 
 ### Fixed
 

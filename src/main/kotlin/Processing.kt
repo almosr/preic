@@ -50,24 +50,34 @@ class Processing(
 
             checkLabelBlocks(line)
 
-            //Find all labels in the current line
-            val lineLabels = LABEL_REGEX.findAll(lineContent).map { it.groupValues[1] }.toList()
+            var replaceCount = 0
+            do {
+                //Find all labels in the current line
+                val lineLabels = LABEL_REGEX.findAll(lineContent).map { it.groupValues[1] }.toList()
 
-            //Replace labels in current line with actual line numbers they represent
-            lineLabels.forEach { labelStr ->
-                val originalLabel = "{$labelStr}"
-                val foundLabel = labels[originalLabel] ?: let {
-                    //Is the missing label for a variable?
-                    if (labelStr.startsWith(LABEL_PREFIX_VARIABLE)) {
-                        //Then create a new label
-                        createVariableLabel(labelStr.drop(1), originalLabel)
-                    } else {
-                        throw Exception("Undefined label: $labelStr\n$line")
+                //Replace labels in current line with actual line numbers they represent
+                lineLabels.forEach { labelStr ->
+                    val originalLabel = "{$labelStr}"
+                    val foundLabel = labels[originalLabel] ?: let {
+                        //Is the missing label for a variable?
+                        if (labelStr.startsWith(LABEL_PREFIX_VARIABLE)) {
+                            //Then create a new label
+                            createVariableLabel(labelStr.drop(1), originalLabel)
+                        } else {
+                            throw Exception("Undefined label: $labelStr\n$line")
+                        }
                     }
+
+                    lineContent = lineContent.replace(originalLabel, foundLabel.output)
                 }
 
-                lineContent = lineContent.replace(originalLabel, foundLabel.output)
-            }
+                replaceCount++
+                if (replaceCount > MAX_LABEL_ITERATIONS) {
+                    throw Exception("Maximum number of label processing iterations reached, possible recursive labels\n$line")
+                }
+
+                //Keep searching for labels in the current line until nothing left
+            } while (lineLabels.isNotEmpty())
 
             if (optimizeWhiteSpace) {
                 lineContent = optimizeWhiteSpace(lineContent)
@@ -423,6 +433,7 @@ class Processing(
         private const val MAX_BASIC_LINE_NUMBER = 63999
         private const val MAX_BASIC_SOURCE_LINE_LENGTH = 256
 
+        private const val MAX_LABEL_ITERATIONS = 100
         private const val LABEL_PREFIX_LINE = '#'
         private const val LABEL_PREFIX_VARIABLE = '@'
         private const val LABEL_PREFIX_LITERAL = '%'

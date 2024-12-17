@@ -348,6 +348,29 @@ Which will be turned into this source code:
 As you can see, the literal label for `white` does not appear in the processed source code in any form because it was
 defined, but not used anywhere.
 
+Literal labels can be included in other literal labels, so complex structures can be defined easily. For example:
+
+```
+//Define target address
+{%SYSTEM_COLOR_KEYS_BANK}=2041
+
+//Define command literal label that includes the target address as literal label
+{%SET_SYSTEM_COLOR_KEYS_BANK_TO_RAM}=poke{%SYSTEM_COLOR_KEYS_BANK},0
+
+//Add execution of command to program
+{%SET_SYSTEM_COLOR_KEYS_BANK_TO_RAM}
+```
+
+The output for this code fragment will be:
+
+```
+poke2041,0
+```
+
+When literal labels are referring to each other then it is possible to end up with an infinite recursion. When the tool
+processes the same line more than 100 times and still not finished with the labels then it throws an error because most
+likely the labels are replacing each other in an infinite recursion.
+
 #### Including files
 
 Nobody likes looking at long source code, it is hard to understand and maintain. Breaking up the source code into
