@@ -246,18 +246,30 @@ class Processing(
             //or there is a line or literal label or line number at the beginning,
             //or there is any special command somewhere in the current line already?
             val currentContent = currentLine?.content ?: ""
+
+            //Does this line start with label?
+            if (line.content.matches(JOIN_LINE_STARTS_WITH_REGEX)) {
+                //Not safe to join, dump accumulated content and skip this line
+                currentLine?.let { output.add(it) }
+                currentLine = null
+                output.add(line)
+                return@forEach
+            }
+
+            //Can we add this line to the accumulated content?
+            //We can't when no content yet, or accumulated content is too long already,
+            //or it contains special commands which can derail the execution.
             if (currentLine == null ||
                 currentContent.length > MAX_BASIC_SOURCE_LINE_LENGTH ||
-                line.content.matches(JOIN_LINE_STARTS_WITH_REGEX) ||
                 JOIN_LINE_SPECIAL_COMMANDS.any { currentContent.contains(it) }
             ) {
-                //Close previous line and start a new one
+                //Close previous accumulated content and start a new one
                 currentLine?.let { output.add(it) }
                 currentLine = line
                 return@forEach
             }
 
-            //Join lines
+            //Safe to join lines
             //When there is only a line label in the current line then
             //separate the lines by space otherwise by semicolon (:).
             val separator = if (currentContent.matches(JOIN_LINE_ONLY_LINE_LABEL)) {

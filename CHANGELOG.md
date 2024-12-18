@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Handling of one character variable names, previously these names could cause processing errors.
+- Join line optimisation when a line started with a label then it was joined with the next line if that did not start
+  with a label.
 
 ## [1.0.0] - 2024-12-12
 
