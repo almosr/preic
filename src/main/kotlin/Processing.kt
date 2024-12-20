@@ -1,5 +1,5 @@
 import models.Label
-import models.Optimization
+import models.Optimisation
 import models.ProcessingParameters
 import models.SourceLine
 import java.io.File
@@ -24,7 +24,7 @@ class Processing(
         //trim white space from beginning and end of lines.
         val source = readSource(processingParameters.inputFileName)
 
-        //Join optimization on source lines
+        //Join optimisation on source lines
         val joinedSource = joinLines(source)
 
         //Scan for labels first and number each line
@@ -39,8 +39,8 @@ class Processing(
 
     private fun outputProcessedSource(source: List<SourceLine>) {
 
-        //Turn on white space otimization when included in optimization flags
-        val optimizeWhiteSpace = processingParameters.optimizations.contains(Optimization.REMOVE_WHITE_SPACE)
+        //Turn on white space optimisation when included in optimisation flags
+        val optimiseWhiteSpace = processingParameters.optimisations.contains(Optimisation.REMOVE_WHITE_SPACE)
 
         //Output pre-processed source with line numbers
         source.forEach { line ->
@@ -79,8 +79,8 @@ class Processing(
                 //Keep searching for labels in the current line until nothing left
             } while (lineLabels.isNotEmpty())
 
-            if (optimizeWhiteSpace) {
-                lineContent = optimizeWhiteSpace(lineContent)
+            if (optimiseWhiteSpace) {
+                lineContent = optimiseWhiteSpace(lineContent)
             }
 
             //Output processed line
@@ -105,7 +105,7 @@ class Processing(
         ).also { labels[originalLabel] = it }
     }
 
-    private fun optimizeWhiteSpace(lineContent: String): String {
+    private fun optimiseWhiteSpace(lineContent: String): String {
         //Is there a REM command in the line? If yes then stop processing white space there.
         //Note: this lookup is a bit naive, doesn't parse the BASIC line
         val endOfLine = lineContent.indexOf("rem")
@@ -231,7 +231,7 @@ class Processing(
 
 
     private fun joinLines(input: List<SourceLine>): List<SourceLine> {
-        if (!processingParameters.optimizations.contains(Optimization.JOIN_LINES)) {
+        if (!processingParameters.optimisations.contains(Optimisation.JOIN_LINES)) {
             //Join lines optim is off, return original source without any change
             return input
         }

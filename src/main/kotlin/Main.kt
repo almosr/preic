@@ -1,4 +1,5 @@
-import models.Optimization
+import models.CommandLineParameter
+import models.Optimisation
 import models.ProcessingParameters
 import kotlin.system.exitProcess
 
@@ -31,16 +32,16 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
     params.removeAt(0)
 
     //Get label file name
-    val labelFileName = getParameter(params, "-l")
+    val labelFileName = getParameter(params, CommandLineParameter.LABEL_FILE_NAME)
 
     //Get library dir path
-    val libraryDirPath = getParameter(params, "-ld")
+    val libraryDirPath = getParameter(params, CommandLineParameter.LIBRARY_DIRECTORY_PATH)
 
-    //Get optimizations
-    val optims = getParameter(params, "-o")
+    //Get optimisations
+    val optims = getParameter(params, CommandLineParameter.OPTIMISATION_FLAGS)
         ?.map { flag ->
-            Optimization.entries.firstOrNull { it.commandLineFlag == flag }
-                ?: throw Exception("Unrecognized optimization flag: $flag")
+            Optimisation.entries.firstOrNull { it.commandLineFlag == flag }
+                ?: throw Exception("Unrecognized optimisation flag: $flag")
         } ?: emptyList()
 
     //Last parameter (if exists) is output file name
@@ -56,12 +57,12 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
         outputFileName = outputFileName,
         libraryDirPath = libraryDirPath,
         labelFileName = labelFileName,
-        optimizations = optims
+        optimisations = optims
     )
 }
 
-private fun getParameter(params: MutableList<String>, parameterName: String): String? =
-    params.indexOf(parameterName)
+private fun getParameter(params: MutableList<String>, parameter: CommandLineParameter): String? =
+    params.indexOf("-${parameter.commandLineFlag}")
         .takeIf { it >= 0 }
         ?.let {
             params.removeAt(it)
@@ -69,18 +70,12 @@ private fun getParameter(params: MutableList<String>, parameterName: String): St
         }
 
 private fun printUsage() {
+    val commandLineParams = CommandLineParameter.entries
+        .joinToString(" ") { "[-${it.commandLineFlag} ${it.additionalParameter}]" }
+
     println("preic v${BuildVersion.getVersion()}\n")
-    println("Usage: java -jar preic.jar <input BASIC source file> [-l <label list file>] [-o <opt flags>] [output pre-processed file]\n")
-    println("<input BASIC source file> - BASIC source file to be pre-processed\n")
-    println("-l <label list file> - optional path to a file for label definition dump\n")
-    println("-ld <library dir> - optional path to a directory where included files will be searched also\n")
-    println(
-        "-o <opt flags> - optional optimisation flags, when set then the relevant processing will be completed on the output:\n" +
-                "  * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and\n" +
-                "          inside strings.\n" +
-                "  * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible.\n" +
-                "          _Warning_: since the tool does not interpret the source, this optimization could cause runtime issues\n" +
-                "           with some specific source code."
-    )
+    println("Usage: java -jar preic.jar <input BASIC source file> $commandLineParams [output pre-processed file]\n")
+    println("<input BASIC source file> - BASIC source file to be pre-processed")
+    println(CommandLineParameter.entries.joinToString("\n") { "-${it.commandLineFlag} ${it.additionalParameter} - ${it.description}" })
     println("[output pre-processed file] - optional output pre-processed file, default is stdout")
 }
