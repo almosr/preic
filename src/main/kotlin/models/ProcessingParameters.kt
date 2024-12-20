@@ -25,16 +25,20 @@ data class ProcessingParameters(
  */
 enum class Optimisation(val commandLineFlag: Char, val description: String) {
 
+    JOIN_LINES(
+        'j',
+        "Join BASIC lines, when set then processing attempts to join as many lines as safely possible. "
+    ),
+
+    REMOVE_REM_COMMANDS(
+        'r',
+        "Remove REM BASIC commands from source to make it run faster and occupy less memory."
+    ),
+
     REMOVE_WHITE_SPACE(
         'w',
         "Remove white space from lines where not required, white space remains unchanged after `REM` command and inside strings."
-    ),
-
-    JOIN_LINES(
-        'j',
-        "Join BASIC lines, when set then processing attempts to join as many lines as safely possible. " +
-                "_Warning_: since the tool does not interpret the source, this optimisation could cause runtime issues with some specific source code."
-    ),
+    )
 }
 
 /**
@@ -64,7 +68,8 @@ enum class CommandLineParameter(val commandLineFlag: String, val additionalParam
         "<opt flags>",
         "optional optimisation flags, when set then the relevant processing will be completed on the output:\n" +
                 Optimisation.entries.joinToString("\n") {
-                    "* `${it.commandLineFlag} - ${it.description}"
-                }
+                    "  * `${it.commandLineFlag} - ${it.description}"
+                } +
+                "\n  _Warning_: since the tool does not interpret the source, optimisations could cause runtime issues with some specific source code."
     )
 }

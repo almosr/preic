@@ -24,8 +24,11 @@ class Processing(
         //trim white space from beginning and end of lines.
         val source = readSource(processingParameters.inputFileName)
 
+        //REM removal optimisation on source lines
+        val remRemovedSource = removeRemCommands(source)
+
         //Join optimisation on source lines
-        val joinedSource = joinLines(source)
+        val joinedSource = joinLines(remRemovedSource)
 
         //Scan for labels first and number each line
         val preprocessedSource = scanLabels(joinedSource)
@@ -229,6 +232,45 @@ class Processing(
             } ?: throw Exception("File could not be found: $fileName")
         }
 
+
+    private fun removeRemCommands(input: List<SourceLine>): List<SourceLine> {
+        if (!processingParameters.optimisations.contains(Optimisation.REMOVE_REM_COMMANDS)) {
+            //Remove REM commands optim is off, return original source without any change
+            return input
+        }
+
+        return input.mapNotNull { line ->
+            val content = line.content
+
+            //Try to find REM commands that are standing separated from anything else
+            val remCommand = REMOVE_REM_COMMANDS_REGEX.findAll(content)
+                .firstOrNull() ?: return@mapNotNull line
+            val lineStart = content.substring(0, remCommand.range.first)
+
+            //Is REM inside a string literal?
+            //Count the number of double quotes in the line in front of REM,
+            //if not even number then one is left open before the REM command.
+            if (lineStart.count { it == '"' } % 2 != 0
+            ) {
+                return@mapNotNull line
+            }
+
+            //Does the line start with line number that should be preserved when REM removed?
+            val lineNumber = content.takeWhile { it.isDigit() }
+            if (lineNumber.isNotEmpty() && remCommand.range.contains(lineNumber.length)) {
+                //Return the line number
+                return@mapNotNull line.copy(content = lineNumber)
+            }
+
+            //When line starts with REM then drop the entire line
+            if (remCommand.range.first == 0) {
+                return@mapNotNull null
+            }
+
+            //Remove the entire line starting with REM command
+            line.copy(content = lineStart)
+        }
+    }
 
     private fun joinLines(input: List<SourceLine>): List<SourceLine> {
         if (!processingParameters.optimisations.contains(Optimisation.JOIN_LINES)) {
@@ -457,5 +499,7 @@ class Processing(
         private val JOIN_LINE_SPECIAL_COMMANDS = listOf("goto", "go to", "if", "then", "return", "rem")
         private val JOIN_LINE_STARTS_WITH_REGEX = Regex("^(\\{[$LABEL_PREFIX_LINE|$LABEL_PREFIX_LITERAL]+|[0-9]+).*")
         private val JOIN_LINE_ONLY_LINE_LABEL = Regex("^\\{$LABEL_PREFIX_LINE[^}]*}$")
+
+        private val REMOVE_REM_COMMANDS_REGEX = Regex("(^[0-9]*rem|[\\s:]rem)")
     }
 }

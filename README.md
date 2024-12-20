@@ -136,12 +136,14 @@ Parameters are:
 - `-ld <library dir>` - optional path to a directory where included files will be searched also. This parameter makes it
   possible to use a collection of routines or definitions from a generic folder outside the current project.
 - `-o <optim flags>` - optimisation flags, when set then the relevant processing will be completed on the output:
-    * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and
-      inside strings.
     * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
       fewer lines make the program run faster.
-      _Warning_: since the tool does not interpret the source, this optimization could cause runtime issues with some
-      specific source code.
+  * `r` - remove REM BASIC commands from source to make it run faster and occupy less memory.
+  * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and
+    inside strings.
+
+  _Warning_: since the tool does not interpret the source, optimizations could cause runtime issues with some specific
+  source code.
 - `[output pre-processed file]` - optional output pre-processed file, default is `stdout`.
 
 The tool does not output an executable program, pre-processed source code should be tokenized. As mentioned in this
