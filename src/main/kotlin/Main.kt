@@ -1,12 +1,36 @@
 import models.CommandLineParameter
 import models.Optimisation
 import models.ProcessingParameters
+import java.io.PrintStream
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
 
     try {
-        Processing(getCommandLineParameters(args)).processSource()
+        val parameters = getCommandLineParameters(args)
+
+        val optimiser = Optimiser(parameters.optimisations)
+        val preProcessor = PreProcessor(optimiser)
+
+        //Read source file together with included files and
+        //trim white space from beginning and end of lines.
+        val source = SourceReader(
+            inputFileName = parameters.inputFileName,
+            libraryDirPath = parameters.libraryDirPath
+        ).execute()
+
+        //Execute optimisations
+        val optimisedSource = optimiser.execute(source)
+
+        //Output goes to the specified output file, if not specified then standard output
+        val outputFile: PrintStream = parameters.outputFileName?.let { PrintStream(it) } ?: System.out
+
+        //Pre-process and output processed source
+        preProcessor.execute(outputFile, optimisedSource)
+
+        //Print labels to file when requested
+        parameters.labelFileName?.let { preProcessor.printLabels(PrintStream(it)) }
+
     } catch (e: Exception) {
         println("\nERROR: $e")
         if (e.cause != null) println(" Cause: ${e.cause}")
