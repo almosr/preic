@@ -1,10 +1,10 @@
 import PreProcessor.Companion.LABEL_PREFIX_LINE
 import PreProcessor.Companion.LABEL_PREFIX_LITERAL
-import models.Optimisation
+import models.OptimisationFlag
 import models.SourceLine
 
 class Optimiser(
-    private val optimisationFlags: List<Optimisation>
+    private val optimisationFlags: List<OptimisationFlag>
 ) {
 
     fun execute(input: List<SourceLine>): List<SourceLine> =
@@ -13,7 +13,7 @@ class Optimiser(
 
     fun optimiseWhiteSpace(lineContent: String): String {
         //Is white-space optimisation enabled?
-        if (!optimisationFlags.contains(Optimisation.REMOVE_WHITE_SPACE)) {
+        if (!optimisationFlags.contains(OptimisationFlag.REMOVE_WHITE_SPACE)) {
             //Not enabled, don't change the line
             return lineContent
         }
@@ -51,7 +51,7 @@ class Optimiser(
     }
 
     private fun List<SourceLine>.removeRemCommands(): List<SourceLine> {
-        if (!optimisationFlags.contains(Optimisation.REMOVE_REM_COMMANDS)) {
+        if (!optimisationFlags.contains(OptimisationFlag.REMOVE_REM_COMMANDS)) {
             //Remove REM commands optim is off, return original source without any change
             return this
         }
@@ -90,7 +90,7 @@ class Optimiser(
     }
 
     private fun List<SourceLine>.joinLines(): List<SourceLine> {
-        if (!optimisationFlags.contains(Optimisation.JOIN_LINES)) {
+        if (!optimisationFlags.contains(OptimisationFlag.JOIN_LINES)) {
             //Join lines optim is off, return original source without any change
             return this
         }

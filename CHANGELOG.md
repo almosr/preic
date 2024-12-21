@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Optional command line parameter `-ld` for specifying source library directory.
 - Optimisation `r` for removing REM commands from source code.
+- Processing flag `$` for converting hexadecimal numbers to decimal in the source code.
 
 ### Changed
 

@@ -1,5 +1,6 @@
 import models.CommandLineParameter
-import models.Optimisation
+import models.OptimisationFlag
+import models.ProcessingFlag
 import models.ProcessingParameters
 import java.io.PrintStream
 import kotlin.system.exitProcess
@@ -9,8 +10,8 @@ fun main(args: Array<String>) {
     try {
         val parameters = getCommandLineParameters(args)
 
-        val optimiser = Optimiser(parameters.optimisations)
-        val preProcessor = PreProcessor(optimiser)
+        val optimiser = Optimiser(parameters.optimisationFlags)
+        val preProcessor = PreProcessor(optimiser, parameters.processingFlags)
 
         //Read source file together with included files and
         //trim white space from beginning and end of lines.
@@ -61,11 +62,18 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
     //Get library dir path
     val libraryDirPath = getParameter(params, CommandLineParameter.LIBRARY_DIRECTORY_PATH)
 
-    //Get optimisations
-    val optims = getParameter(params, CommandLineParameter.OPTIMISATION_FLAGS)
+    //Get optimisation flags
+    val optimFlags = getParameter(params, CommandLineParameter.OPTIMISATION_FLAGS)
         ?.map { flag ->
-            Optimisation.entries.firstOrNull { it.commandLineFlag == flag }
+            OptimisationFlag.entries.firstOrNull { it.commandLineFlag == flag }
                 ?: throw Exception("Unrecognized optimisation flag: $flag")
+        } ?: emptyList()
+
+    //Get processing flags
+    val procFlags = getParameter(params, CommandLineParameter.PROCESSING_FLAGS)
+        ?.map { flag ->
+            ProcessingFlag.entries.firstOrNull { it.commandLineFlag == flag }
+                ?: throw Exception("Unrecognized processing flag: $flag")
         } ?: emptyList()
 
     //Last parameter (if exists) is output file name
@@ -81,7 +89,8 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
         outputFileName = outputFileName,
         libraryDirPath = libraryDirPath,
         labelFileName = labelFileName,
-        optimisations = optims
+        optimisationFlags = optimFlags,
+        processingFlags = procFlags,
     )
 }
 

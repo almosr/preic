@@ -7,14 +7,16 @@ package models
  * @param outputFileName output (processed) source file name/path, or `null` when not specified.
  * @param libraryDirPath library directory search path, or `null` when not specified.
  * @param labelFileName label definition dump file name/path, or `null` when not specified.
- * @param optimisations list of optimisation flags.
+ * @param optimisationFlags list of optimisation flags.
+ * @param processingFlags list of processing flags.
  */
 data class ProcessingParameters(
     val inputFileName: String,
     val outputFileName: String?,
     val libraryDirPath: String?,
     val labelFileName: String?,
-    val optimisations: List<Optimisation>,
+    val optimisationFlags: List<OptimisationFlag>,
+    val processingFlags: List<ProcessingFlag>,
 )
 
 /**
@@ -23,7 +25,7 @@ data class ProcessingParameters(
  * @param commandLineFlag flag character among command line parameters.
  * @param description description of the flag for printing to the command line as help.
  */
-enum class Optimisation(val commandLineFlag: Char, val description: String) {
+enum class OptimisationFlag(val commandLineFlag: Char, val description: String) {
 
     JOIN_LINES(
         'j',
@@ -38,6 +40,20 @@ enum class Optimisation(val commandLineFlag: Char, val description: String) {
     REMOVE_WHITE_SPACE(
         'w',
         "Remove white space from lines where not required, white space remains unchanged after `REM` command and inside strings."
+    )
+}
+
+/**
+ * Processing flags
+ *
+ * @param commandLineFlag flag character among command line parameters.
+ * @param description description of the flag for printing to the command line as help.
+ */
+enum class ProcessingFlag(val commandLineFlag: Char, val description: String) {
+
+    CONVERT_HEXADECIMAL_NUMBERS(
+        '$',
+        "Convert hexadecimal numbers to decimal, hexadecimal numbers should be prefixed with double dollar signs ($$).",
     )
 }
 
@@ -63,11 +79,20 @@ enum class CommandLineParameter(val commandLineFlag: String, val additionalParam
 
     ),
 
+    PROCESSING_FLAGS(
+        "p",
+        "<processing flags>",
+        "optional processing flags, when set then relevant processing will be completed on the output:\n" +
+                ProcessingFlag.entries.joinToString("\n") {
+                    "  * `${it.commandLineFlag} - ${it.description}"
+                }
+    ),
+
     OPTIMISATION_FLAGS(
         "o",
         "<opt flags>",
         "optional optimisation flags, when set then the relevant processing will be completed on the output:\n" +
-                Optimisation.entries.joinToString("\n") {
+                OptimisationFlag.entries.joinToString("\n") {
                     "  * `${it.commandLineFlag} - ${it.description}"
                 } +
                 "\n  _Warning_: since the tool does not interpret the source, optimisations could cause runtime issues with some specific source code."

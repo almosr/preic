@@ -1,17 +1,51 @@
 import models.Label
+import models.ProcessingFlag
 import models.SourceLine
 import java.io.PrintStream
 
 class PreProcessor(
     private val optimiser: Optimiser,
+    private val processingFlags: List<ProcessingFlag>
 ) {
     private val variableNameRepository = VariableNameRepository()
     private val labels = mutableMapOf<String, Label>()
     private var basicLineNumber = 0
 
     fun execute(outputFile: PrintStream, input: List<SourceLine>) {
-        input.scanLabels()
+        input
+            .convertHexadecimalNumbers()
+            .scanLabels()
             .outputProcessedSource(outputFile)
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun List<SourceLine>.convertHexadecimalNumbers(): List<SourceLine> {
+        //Is converting hexadecimal numbers enabled?
+        if (!processingFlags.contains(ProcessingFlag.CONVERT_HEXADECIMAL_NUMBERS)) {
+            //Not enabled, don't change the source
+            return this
+        }
+
+        return map { line ->
+            try {
+                val newContent = StringBuilder(line.content)
+                do {
+                    val number = HEXADECIMAL_NUMBER_REGEX.findAll(newContent)
+                        .firstOrNull()
+
+                    if (number != null) {
+                        //Convert hexadecimal to decimal, remove leading $$ signs
+                        val decimal = number.value.drop(2).hexToLong()
+                        newContent.replace(number.range.first, number.range.last + 1, decimal.toString())
+                    }
+
+                } while (number != null)
+
+                line.copy(content = newContent.toString())
+            } catch (e: Exception) {
+                throw Exception("Error while parsing hexadecimal number\n$line", e)
+            }
+        }
     }
 
     private fun List<SourceLine>.scanLabels(): List<SourceLine> =
@@ -268,5 +302,7 @@ class PreProcessor(
         private val LABEL_PREFIXES_AS_STRING = LABEL_PREFIXES.joinToString("")
 
         private val LABEL_REGEX = Regex("\\{([$LABEL_PREFIXES_AS_STRING].*?)}")
+
+        private val HEXADECIMAL_NUMBER_REGEX = Regex("\\$\\$[0-9a-fA-F]+")
     }
 }

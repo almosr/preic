@@ -126,7 +126,7 @@ For running the tool you need a Java 17-compatible Java virtual machine.
 You can run the tool binary JAR file from command line using Java:
 
 ```shell
-java -jar preic.jar <input basic source file> [-l <label list file>] [-o <optim flags>] [output pre-processed file]
+java -jar preic.jar <input basic source file> [-l <label list file>] [-o <optim flags>] [-p <processing flags>] [output pre-processed file]
 ```
 
 Parameters are:
@@ -135,7 +135,15 @@ Parameters are:
 - `-l <label list file>` - optional path to a file for label definition dump.
 - `-ld <library dir>` - optional path to a directory where included files will be searched also. This parameter makes it
   possible to use a collection of routines or definitions from a generic folder outside the current project.
-- `-o <optim flags>` - optimisation flags, when set then the relevant processing will be completed on the output:
+- `-p <processing flags>` - optional processing flags, when set then the relevant processing will be completed on the
+  output:
+    * `$` - Convert hexadecimal numbers to decimal, hexadecimal numbers should be prefixed with double dollar signs
+      (`$$`). String literals are not considered with this processing, hexadecimal numbers inside string literals will
+      also be converted. Both upper or lowercase letters and leading zeroes can be used in the hexadecimal number, any
+      non-hexadecimal digit terminates the number.
+
+- `-o <optim flags>` - optional optimisation flags, when set then the relevant processing will be completed on the
+  output:
     * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
       fewer lines make the program run faster.
   * `r` - remove REM BASIC commands from source to make it run faster and occupy less memory.
@@ -190,6 +198,27 @@ still inconvenient.
 Processing is going to take over this burden, you don't have to number the lines. Auto-numbering starts from 0 and
 increases the line numbers by 1 to keep the program compact. If you want a specific line number then you can start the
 line with the number and auto-numbering picks up that line number from that line.
+
+### Hexadecimal numbers
+
+When PEEK/POKE is used in a BASIC program the referred memory address has to be in decimal format since the interpreter
+cannot deal with hexadecimal numbers. This is rather annoying when someone already got used to for example dealing with
+hardware registers in assembly and the decimal form is hard to interpret.
+
+By using the `$` processing flag the tool converts all hexadecimal numbers into decimal, so no need to keep these
+numbers in decimal form in the source code. Hexadecimal numbers must be prefixed with double dollar signs (`$$`).
+
+For example changing the background colour to black on Commodore 64:
+
+```
+poke $$D021, 0
+```
+
+That will be changed by processing into:
+
+```
+poke 53281,0
+```
 
 #### Line label
 
