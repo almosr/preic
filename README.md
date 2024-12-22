@@ -1,6 +1,7 @@
 # preic
 
-Commodore BASIC source code pre-processor tool
+Pre-processor tool for Commodore BASIC cross-development that introduces some modern language features and
+optimisations.
 
 ## Introduction
 
@@ -9,15 +10,16 @@ would make much sense to implement anything in BASIC anymore, it was more like a
 
 While I was thinking about setting up a cross-compiler environment
 using [petcat](https://techtinkering.com/articles/tokenize-detokenize-commodore-basic-programs-using-petcat/) I realised
-how much programming experience involved since I typed in my first BASIC program into my good old Commodore 16.
+how much programming experience evolved since I typed in my first BASIC program into my good old Commodore 16.
 
 The first thing I missed was comments in the source code. Maybe I am just too old, but I need these little piece of
 hints about my own code otherwise it takes too long to understand what does it do when I come back to it after a week or
-so. That was easy to solve by simply doing a [grep](https://www.geeksforgeeks.org/grep-command-in-unixlinux/) on the
-sources before I fed it into `petcat` for producing the actual executable.
+so. That was easy to solve by simply doing a specific [grep](https://www.geeksforgeeks.org/grep-command-in-unixlinux/)
+run on the sources that filtered out all comments before I fed it into `petcat` to produce the actual executable.
 
-Then the more I used BASIC the more I grew annoyed by its limitations due to ancient design. Dealing with line numbers
-is a pain, variable names are limited to two characters, source code must be in one file and so on.
+Then the more I used BASIC the more I grew annoyed by its limitations due to its ancient design. Dealing with line
+numbers is a pain, variable names are limited to two characters, source code must be in one file, this list kept growing
+day by day.
 
 At the end I decided that I need a pre-processing tool that solves these issues by producing a BASIC-compliant source
 code out of more flexible input files. And that is how the idea of `preic` was born.
@@ -33,14 +35,18 @@ This simple tool addresses the following limitations of Commodore BASIC:
   each line. So, no problem inserting a new line anymore, and you don't have to remember numbers.
 * **No comments apart from REM command** - while it is possible to put comments into BASIC program using
   the [REM](https://www.c64-wiki.com/wiki/REM) command, but that is completely useless and waste of resources at
-  runtime. Pre-processing simply strips comments from the source code, so you can add as many as you want.
+  runtime. Pre-processing simply strips comments from the source code, so you can add as many as you want. You can also
+  remove the `REM` commands if you want them to be gone from the final program.
 * **Variable name limits** - while longer variable names are accepted by Commodore BASIC, only the first two characters
   are considered as the real variable name. This is really annoying when you want to use meaningful variable names.
   So the tool can be used to specify variables with longer names.
 * **No way to define constants** - dealing with certain constants, like hardware register addresses is painful in BASIC,
   you either waste variables store these or keep typing in the obscure numbers.
   Well, no longer, you can define your own constants with pre-processing.
-* **No file includes** - BASIC source is inherently consists of one long file, cannot be split up into more manageable
+* **No hexadecimal numbers in BASIC program** - sometimes you just don't want to convert hexadecimal numbers to decimal.
+  Especially when those refer to some very specific address like hardware registers. Pre-processing can convert these
+  numbers for you when produces the final source code.
+* **No file includes** - BASIC source inherently consists of one long file, cannot be split up into more manageable
   chunks unless you keep loading individual programs at runtime.
   Pre-processing allows you to include any source files from any path, this helps you to split up your source or build a
   reusable routine library.
@@ -114,8 +120,8 @@ For more complex examples have a look at the included [examples](./examples) fol
 The goal is to make the pre-processing compatible with [Commodore BASIC versions](https://www.c64-wiki.com/wiki/BASIC).
 The processed source code must remain compatible with `petcat` tokenizer (see below).
 
-*On a side note:* this tool does not try to interpret the source code beyond a very simple text structure. Probably
-other flavour of BASIC source code can be fed into it and would produce a meaningful output for those too.
+*On a side note:* this tool does not try to interpret the source code beyond basic textual structure. Probably other
+flavours of BASIC source code can be fed into it and would produce a meaningful output for those too.
 
 ## Prerequisites
 
@@ -135,22 +141,21 @@ Parameters are:
 - `-l <label list file>` - optional path to a file for label definition dump.
 - `-ld <library dir>` - optional path to a directory where included files will be searched also. This parameter makes it
   possible to use a collection of routines or definitions from a generic folder outside the current project.
-- `-p <processing flags>` - optional processing flags, when set then the relevant processing will be completed on the
+- `-p <processing flags>` - optional processing flags, when set then relevant processing will be completed on the
   output:
     * `$` - Convert hexadecimal numbers to decimal, hexadecimal numbers should be prefixed with double dollar signs
       (`$$`). String literals are not considered with this processing, hexadecimal numbers inside string literals will
       also be converted. Both upper or lowercase letters and leading zeroes can be used in the hexadecimal number, any
-      non-hexadecimal digit terminates the number.
+      character that is not a hexadecimal digit terminates the number.
 
-- `-o <optim flags>` - optional optimisation flags, when set then the relevant processing will be completed on the
-  output:
+- `-o <optim flags>` - optional optimisation flags, when set then relevant processing will be completed on the output:
     * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
       fewer lines make the program run faster.
-  * `r` - remove REM BASIC commands from source to make it run faster and occupy less memory.
+  * `r` - remove `REM` BASIC commands from source to make it run faster and occupy less memory.
   * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and
     inside strings.
 
-  _Warning_: since the tool does not interpret the source, optimizations could cause runtime issues with some specific
+  _Warning_: since the tool does not interpret the source, optimisations could cause runtime issues with some specific
   source code.
 - `[output pre-processed file]` - optional output pre-processed file, default is `stdout`.
 
@@ -162,15 +167,16 @@ from [VICE](https://sourceforge.net/projects/vice-emu/) project for that purpose
 ### Source code controls
 
 Pre-processing is going to modify the input source code various ways. All the features of the tool are optional, it is
-up to you whether you want to make use of it or not.
+up to you whether you want to use them or not.
 
 Below you will find the description of all of these features:
 
 #### White space
 
-Indenting the source code helps to understand structure of the execution. While it could be done by using colon (
-`:`) character at the beginning of the line in BASIC, but that is actually decreasing the program performance at
-runtime.
+Indenting the source code helps to understand structure of the execution. While it could be done by using colon (`:`)
+character at the beginning of the line in BASIC, but that is actually decreasing the program performance at runtime.
+Same goes to spaces between BASIC commands and parameters, not needed at runtime, but makes the source code more
+readable.
 
 Processing is going to strip all whitespace characters from the beginning and end of each source code line, so feel
 free to indent your source code in any way you like.
@@ -191,13 +197,13 @@ b=b+1 //Variable B was also increased
 
 #### Auto-numbering lines
 
-Dealing with line numbers of a BASIC program is a hassle. Some of the Commodore BASIC versions have a command (
-`RENUMBER`) that makes it easier to insert new lines in between already numbered lines, but remembering the numbers is
+Dealing with line numbers of a BASIC program is a hassle. Some of the Commodore BASIC versions have a command
+(`RENUMBER`) that makes it easier to insert new lines between already numbered lines, but remembering the numbers is
 still inconvenient.
 
 Processing is going to take over this burden, you don't have to number the lines. Auto-numbering starts from 0 and
 increases the line numbers by 1 to keep the program compact. If you want a specific line number then you can start the
-line with the number and auto-numbering picks up that line number from that line.
+line with the number and auto-numbering picks up that line number starting from that line.
 
 ### Hexadecimal numbers
 
@@ -217,7 +223,7 @@ poke $$D021, 0
 That will be changed by processing into:
 
 ```
-poke 53281,0
+poke 53281, 0
 ```
 
 #### Line label
@@ -226,8 +232,8 @@ You don't have to deal with line numbers (if you choose not to), but you still w
 source code.
 Let's say for jumping to a line using `GOTO` or `GOSUB` commands you need to know the target line number.
 
-For this purpose you can define line labels to any line that can be used instead of the actual number in your source
-code as a reference.
+For this purpose you can define line labels as a reference to any line that can be used instead of the actual number in
+your source code.
 The line label definition must be added to the beginning of the target line, in the following format:
 `{#line label name}`.
 Then you can use the same label in the same format anywhere in your source code and pre-processing is going to replace
@@ -240,7 +246,7 @@ For example this input:
 goto {#forever_loop}
 ```
 
-Is going to produce this source output:
+Is going to produce this output source:
 
 ```
 0 print "hello world"
@@ -253,16 +259,17 @@ of the line.
 #### Variable label
 
 Naming variables in Commodore BASIC is particularly cumbersome. While the interpreter accepts longer variable names,
-it considers the first two characters from the name only for identifying the variable. This behaviour leads to nasty
+it considers only the first two characters from the name for identifying the variable. This behaviour leads to nasty
 surprises. Also, finding a suitable name for your variable using two characters only is really annoying.
 
 Pre-processing allows you to define your own variables using virtually any length for the name. The variable label
 definition can be added to anywhere in the code, in the following format: `{@variable label name}`. The first instance
 creates the variable and any further reference to the same name will always be referring to the same variable.
 
-In practice a two character variable name will be assigned automatically to the variable label.
+In practice a two character variable name will be assigned automatically to the variable label and persisted for the
+entire source code.
 
-**Warning:** mixing variable labels and actual variables in the code is not advisable, variable name could be re-used
+**Warning:** mixing variable labels and actual variables in the code is not advisable, a variable name could be re-used
 and that could lead to extremely hard to find errors.
 
 Here is an example input:
