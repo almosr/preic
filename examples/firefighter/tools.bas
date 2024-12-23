@@ -209,5 +209,5 @@ get{@key$}:if {@key$}<>"" then goto {#wait_for_space_key_loop}
 
 //Then wait for one more keypress
 {#wait_for_space_key_loop_space}
-getkey{@key$}:if {@key$}<>" " then goto {#wait_for_space_key_loop_space}
+get{@key$}:if {@key$}<>" " then goto {#wait_for_space_key_loop_space}
 return
