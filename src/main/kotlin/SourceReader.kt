@@ -31,9 +31,7 @@ class SourceReader(
 
                             //Process included file
                             line.startsWith("#include") -> {
-
-                                //Space delimits the include directive and the file name
-                                val includedFile = line.split(" ")[1]
+                                val includedFile = getDirectiveParameter(line)
                                 readSource(includedFile)
                             }
 
@@ -52,6 +50,15 @@ class SourceReader(
         } catch (e: Exception) {
             throw Exception("Failed to read source file: $fileName", e)
         }
+    }
+
+    private fun getDirectiveParameter(line: String): String {
+        val start = line.indexOfFirst { it == ' ' }
+        if (start == -1) {
+            throw Exception("Parameter is missing for pre-processing directive")
+        }
+
+        return line.substring(start + 1).trim()
     }
 
     private fun findFile(fileName: String) =
