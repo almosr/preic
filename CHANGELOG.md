@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - unreleased
 
+### Added
+
+- Conditional section definitions using `#ifdef` - `#endif` pre-processing directives.
+- Pre-processing directive `#define` and `#undef` for creating and removing pre-processing flags.
+- Command line option `-d` for creating pre-processing flags.
+
 ### Fixed
 
 - Handling of space character in path names for included files.

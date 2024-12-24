@@ -132,12 +132,14 @@ For running the tool you need a Java 17-compatible Java virtual machine.
 You can run the tool binary JAR file from command line using Java:
 
 ```shell
-java -jar preic.jar <input basic source file> [-l <label list file>] [-o <optim flags>] [-p <processing flags>] [output pre-processed file]
+java -jar preic.jar <input basic source file> [-l <label list file>] [-o <optim flags>] [-p <processing flags>] [-d <pre-processing flag name>] [output pre-processed file]
 ```
 
 Parameters are:
 
 - `<input BASIC source file>` - BASIC source file to be pre-processed.
+- `-d <pre-processing flag name>` - optional definition of a pre-processing flag that will be set as existing at the
+  beginning of the processing.
 - `-l <label list file>` - optional path to a file for label definition dump.
 - `-ld <library dir>` - optional path to a directory where included files will be searched also. This parameter makes it
   possible to use a collection of routines or definitions from a generic folder outside the current project.
@@ -409,6 +411,12 @@ When literal labels are referring to each other then it is possible to end up wi
 processes the same line more than 100 times and still not finished with the labels then it throws an error because most
 likely the labels are replacing each other in an infinite recursion.
 
+### Controlling file pre-processing
+
+More sophisticated projects require specific rules that fine-control the included source code files. Modern compilers
+offer a number of features, like conditional compiling which help setting up a well-defined project structure that is
+producing a number of outputs reliably without source code changes.
+
 #### Including files
 
 Nobody likes looking at long source code, it is hard to understand and maintain. Breaking up the source code into
@@ -425,6 +433,62 @@ It is possible to use the include directive in an included file, there are no li
 hole. There is also no check for recursion, so be careful not to include the already included file again directly or
 indirectly.
 
+#### Conditional processing
+
+Conditional processing includes-excludes certain part of the source code depending on the existence of a specific
+pre-processing flag.
+This feature comes handy when you want to produce different output for various purposes from the same source code files.
+For example, you want a debug version of your program while developing it, but you don't want to slow down the released
+version of the program or output log messages.
+
+To mark a part of your source code conditional you need to use the `#ifdef` - `#else` - `#endif` directives. The opening
+directive `#ifdef` takes one argument that is the name of a pre-processing flag. Anything between the first two
+directives will be added or thrown away depending on the existence of the flag at the time of processing. The `#else`
+part will be used when the flag doesn't exist at the time of processing.
+
+The `#else` directive is optional, required only when you need to react on non-existence of the specified flag.
+
+A conditional processing structure must be finished in the same file where it was started.
+
+For example:
+
+```
+#ifdef DEBUG
+  {%debug_print_score}=gosub{#debug_print_score}
+#else
+  {%debug_print_score}=
+#endif
+
+...
+{@score}={@score}+10
+{%debug_print_score}
+...
+
+#ifdef DEBUG
+  {#debug_print_score} print "Score: ";{@score}:return
+#endif
+```
+
+This example calls the `debug_print_score` subroutine every time when `{%debug_print_score}` literal label is added to
+the source, but only when `DEBUG` pre-processing flag is set. Otherwise, it does nothing to the processed source code
+because the literal label is defined as empty and the score-printing subroutine will not be added at all.
+
+There are two ways to define a pre-processing flag:
+
+- Use the `-d` command line parameter where you can specify a flag to be set at the beginning of the processing. This
+  parameter can be used multiple times to define more than one flag.
+- Use the `#define` directive in your source code to set a flag when that line is processed. __Note__: when that line is
+  excluded by conditional processing then the flag will not be set.
+
+The name of the pre-processing flag may contain any characters except white space, but the names are case-sensitive.
+
+This directive and command line option are not defining macros like in C language, only set a pre-processing flag. If
+you are looking for macros then have a look at [literal labels](#literal-label) instead.
+
+Finally, in some special circumstances you might want to remove an already defined pre-processing flag. For that case
+use the `#undef` directive with the name of the flag and when this line is processed then from that point on the flag
+will be considered undefined.
+
 ### Debugging the processed code
 
 Debugging your code after it was turned into actual BASIC program is not simple because the whole structure might change
@@ -432,13 +496,18 @@ completely. You can find line numbers and variables associated with your labels 
 line option to specify the name for the file where the list will be dumped.
 
 I found helpful to put `REM` commands to specific lines (even temporarily), so you could find your way in the
-processed code. The `REM` commands remain untouched by pre-processing.
+processed code. The `REM` commands remain untouched by pre-processing, unless you specify the `r` optimisation flag that
+instructs the processing to remove these commands.
 
 Breaking up your code into individual files that contain a specific part could also help. By simply commenting out the
 `#include` directive you can skip the entire code that would run from that file.
 
+You can make use of conditional processing to make your debug commands included for later use without disrupting the
+released version.
+
 Typical mistake is to mix up the line label (`{#...}`) with the variable label (`{@...}`). When you use line label
-instead of variable that usually produces a compile or runtime error. However, the other way around a variable could be
+instead of variable that usually produces a compiling or runtime error. However, the other way around a variable could
+be
 interpreted as a line number for a `GOTO` instruction for example. When that happens then the execution would jump to
 the line that is calculated from the value stored in the variable. Quite often an unused variable contains 0, so the
 program restarts immediately and most likely it would just keep repeating this in a loop.

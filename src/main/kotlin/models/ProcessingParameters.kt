@@ -9,6 +9,7 @@ package models
  * @param labelFileName label definition dump file name/path, or `null` when not specified.
  * @param optimisationFlags list of optimisation flags.
  * @param processingFlags list of processing flags.
+ * @param preProcessingFlags set of pre-processing flag names that are considered set at the beginning of processing.
  */
 data class ProcessingParameters(
     val inputFileName: String,
@@ -17,6 +18,7 @@ data class ProcessingParameters(
     val labelFileName: String?,
     val optimisationFlags: List<OptimisationFlag>,
     val processingFlags: List<ProcessingFlag>,
+    val preProcessingFlags: Set<String>,
 )
 
 /**
@@ -66,6 +68,12 @@ enum class ProcessingFlag(val commandLineFlag: Char, val description: String) {
  *
  */
 enum class CommandLineParameter(val commandLineFlag: String, val additionalParameter: String, val description: String) {
+    PRE_PROCESSING_FLAG_DEFINE(
+        "d",
+        "<pre-processing flag name>",
+        "optional definition of a pre-processing flag that will be set as existing at the beginning of the processing."
+    ),
+
     LABEL_FILE_NAME(
         "l",
         "<label list file>",

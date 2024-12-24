@@ -17,7 +17,8 @@ fun main(args: Array<String>) {
         //trim white space from beginning and end of lines.
         val source = SourceReader(
             inputFileName = parameters.inputFileName,
-            libraryDirPath = parameters.libraryDirPath
+            libraryDirPath = parameters.libraryDirPath,
+            preprocessingFlags = parameters.preProcessingFlags,
         ).execute()
 
         //Execute optimisations
@@ -76,6 +77,13 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
                 ?: throw Exception("Unrecognized processing flag: $flag")
         } ?: emptyList()
 
+    //Get pre-processing flag name defines, multiple round is needed to pick up all
+    val preProcFlagNames = mutableSetOf<String>()
+    do {
+        val name = getParameter(params, CommandLineParameter.PRE_PROCESSING_FLAG_DEFINE)
+            ?.also { preProcFlagNames.add(it) }
+    } while (name != null)
+
     //Last parameter (if exists) is output file name
     val outputFileName = if (params.size >= 1) params.removeLast() else null
 
@@ -91,6 +99,7 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
         labelFileName = labelFileName,
         optimisationFlags = optimFlags,
         processingFlags = procFlags,
+        preProcessingFlags = preProcFlagNames,
     )
 }
 

@@ -58,6 +58,13 @@ next:next
 
 {#loop}
 
+//Print debug info when DEBUG pre-processing flag was set
+#ifdef DEBUG
+    {@debug_fighter_y} = int(({@fighter_pos_chars}-{@screen_chars}) / 40)
+    {@debug_fighter_x} = {@fighter_pos_chars}-{@screen_chars}-{@debug_fighter_y} * 40
+    print"{home}{down}{blue}fighter x:";{@debug_fighter_x};"{left} y:";{@debug_fighter_y};"{left} {white}"
+#endif
+
 //Draw firefighter
 poke{@fighter_pos_chars}, {%gfx_fighter_tail}
 
