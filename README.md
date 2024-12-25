@@ -151,9 +151,10 @@ Parameters are:
       character that is not a hexadecimal digit terminates the number.
 
 - `-o <optim flags>` - optional optimisation flags, when set then relevant processing will be completed on the output:
-    * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
-      fewer lines make the program run faster.
+  * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
+    fewer lines make the program run faster.
   * `r` - remove `REM` BASIC commands from source to make it run faster and occupy less memory.
+  * `t` - remove `GOTO` command after `THEN` and `ELSE` commands which is unnecessary for jumping to a line.
   * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and
     inside strings.
 

@@ -39,6 +39,11 @@ enum class OptimisationFlag(val commandLineFlag: Char, val description: String) 
         "Remove REM BASIC commands from source to make it run faster and occupy less memory."
     ),
 
+    REMOVE_GOTO_AFTER_THEN_OR_ELSE(
+        't',
+        "Remove GOTO BASIC command after THEN and ELSE commands which is unnecessary for jumping to a line."
+    ),
+
     REMOVE_WHITE_SPACE(
         'w',
         "Remove white space from lines where not required, white space remains unchanged after `REM` command and inside strings."

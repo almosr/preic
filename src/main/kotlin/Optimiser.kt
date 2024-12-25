@@ -9,6 +9,7 @@ class Optimiser(
 
     fun execute(input: List<SourceLine>): List<SourceLine> =
         input.removeRemCommands()
+            .removeGotoAfterThenOrElse()
             .joinLines()
 
     fun optimiseWhiteSpace(lineContent: String): String {
@@ -65,10 +66,8 @@ class Optimiser(
             val lineStart = content.substring(0, remCommand.range.first)
 
             //Is REM inside a string literal?
-            //Count the number of double quotes in the line in front of REM,
-            //if not even number then one is left open before the REM command.
-            if (lineStart.count { it == '"' } % 2 != 0
-            ) {
+            if (lineStart.isInsideDoubleQuotes()) {
+                //Then don't change the line
                 return@mapNotNull line
             }
 
@@ -86,6 +85,41 @@ class Optimiser(
 
             //Remove the entire line starting with REM command
             line.copy(content = lineStart)
+        }
+    }
+
+    private fun List<SourceLine>.removeGotoAfterThenOrElse(): List<SourceLine> {
+        if (!optimisationFlags.contains(OptimisationFlag.REMOVE_GOTO_AFTER_THEN_OR_ELSE)) {
+            //Remove GOTO commands after THEN/ELSE optim is off, return original source without any change
+            return this
+        }
+
+        return map { line ->
+            val content = StringBuilder(line.content)
+
+            //Try to find `GOTO` and `GO TO` commands when those come directly after THEN or ELSE command,
+            //allow whitespace characters only in between.
+            REMOVE_GOTO_COMMANDS_AFTER_THEN_OR_ELSE_REGEX.findAll(content)
+                .toList()
+                //Go backwards, so we can remove anything from the
+                //line content without changing the ranges for the next item
+                .reversed()
+                .forEach { gotoCommand ->
+
+                    //Is GOTO inside a string literal or after REM command?
+                    val lineStart = content.substring(0, gotoCommand.range.first)
+                    if (!lineStart.isInsideDoubleQuotes() && !lineStart.contains("rem")) {
+                        //No, Remove this instance from line content
+                        content.replace(
+                            //Keep THEN/ELSE at the beginning of removed range
+                            gotoCommand.range.first + 4,
+                            gotoCommand.range.last + 1,
+                            ""
+                        )
+                    }
+                }
+
+            line.copy(content = content.toString())
         }
     }
 
@@ -147,6 +181,10 @@ class Optimiser(
         return output
     }
 
+    //Count the number of double quotes in the provided line fragment,
+    //if not even number then one is left open before the rest of the line.
+    private fun String.isInsideDoubleQuotes() = count { it == '"' } % 2 != 0
+
     companion object {
         private const val MAX_BASIC_SOURCE_LINE_LENGTH = 256
 
@@ -155,6 +193,7 @@ class Optimiser(
         private val JOIN_LINE_ONLY_LINE_LABEL = Regex("^\\{$LABEL_PREFIX_LINE[^}]*}$")
 
         private val REMOVE_REM_COMMANDS_REGEX = Regex("(^[0-9]*rem|[\\s:]rem)")
+        private val REMOVE_GOTO_COMMANDS_AFTER_THEN_OR_ELSE_REGEX = Regex("(then|else)\\s*(go\\s*to)")
 
     }
 

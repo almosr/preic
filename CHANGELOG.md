@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conditional section definitions using `#ifdef` - `#endif` pre-processing directives.
 - Pre-processing directive `#define` and `#undef` for creating and removing pre-processing flags.
 - Command line option `-d` for creating pre-processing flags.
+- Optimisation `t` for removing `GOTO` command after `THEN` and `ELSE` commands. (Thanks to Rafael Gerlicze for the
+  idea.)
 
 ### Fixed
 
