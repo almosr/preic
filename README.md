@@ -490,6 +490,65 @@ Finally, in some special circumstances you might want to remove an already defin
 use the `#undef` directive with the name of the flag and when this line is processed then from that point on the flag
 will be considered undefined.
 
+#### Move frequently called lines to the front
+
+Commodore BASIC does not maintain a list or hash of line addresses. When a program jumps to a line or calls a
+subroutine then the interpreter starts searching for the line number from the beginning of the program following the
+lines until it finds the target. As a consequence when a line is located somewhere at the end of the program then
+jumping to it takes much longer than targeting a line at the beginning of the program.
+
+A simple way of optimising your BASIC program is by moving often called subroutines to the beginning of the program.
+Obviously, this could be done manually, but rather inconvenient to have a bunch of subroutines or the main loop at the
+beginning of the source code rather than where it belongs logically in your source code structure.
+
+Pre-processing offers you a simple way to complete this specific optimisation by marking the frequently called functions
+in your code. Then while processing the source code it rearranges the code sections.
+
+You can start a frequently called section by adding this pre-processing directive: `#frequent` to a line before and
+close the section by adding `#endfrequent` after it. Any code between these two lines will be moved to the front of the
+program. Make sure the section is self-contained: includes line labels for jumping into it and ways to leave the section
+without running out of it. It could contain one or more subroutines which end with `RETURN` commands or `GOTO` commands
+that jumps to a different part of your program.
+
+Any section marked as frequently called should not contain another section that is also marked the same way. Each
+section must be closed in the same file where it was started.
+
+There is no limit on the size of the frequently called sections, however having too many of them or marking large
+sections might defeat the purpose of this optimisation. Use it wisely, testing the speed of your code might help you to
+decide which part should be marked as frequent.
+
+**Important***: when multiple sections are marked as frequently called then the order of these sections at the beginning
+of the program will be arbitrary. Do not count on any side effects of the ordering, it could change together with your
+code or when a new tool version is released.
+
+An example for the section reordering, original source code:
+
+```
+{#loop}
+  {@score}={@score}+10
+  gosub {#print_score}
+goto {#loop}
+
+#frequent
+  {#print_score} print"{home}Score:";{@score}:return
+#endfrequent
+```
+
+And the outputted program:
+
+```
+0 goto 2
+1 print"{home}Score:";{@score}:return
+2 sc=sc+10
+3 gosub 1
+4 goto 2
+```
+
+Obviously, this example is not particularly useful, it is just a demonstration of the feature.
+
+Debugging a restructured program could be difficult. I would recommend marking specific lines with `REM` command that
+can be recognised in the restructured code and can be removed automatically by using `r` optimisation flag.
+
 ### Debugging the processed code
 
 Debugging your code after it was turned into actual BASIC program is not simple because the whole structure might change

@@ -15,14 +15,14 @@ fun main(args: Array<String>) {
 
         //Read source file together with included files and
         //trim white space from beginning and end of lines.
-        val source = SourceReader(
+        val (normalSource, frequentSource) = SourceReader(
             inputFileName = parameters.inputFileName,
             libraryDirPath = parameters.libraryDirPath,
             preprocessingFlags = parameters.preProcessingFlags,
         ).execute()
 
         //Execute optimisations
-        val optimisedSource = optimiser.execute(source)
+        val optimisedSource = optimiser.execute(normalSource, frequentSource)
 
         //Output goes to the specified output file, if not specified then standard output
         val outputFile: PrintStream = parameters.outputFileName?.let { PrintStream(it) } ?: System.out

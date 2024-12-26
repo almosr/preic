@@ -7,15 +7,17 @@ class SourceReader(
     private val preprocessingFlags: Set<String>,
 ) {
 
+    //Returns the normal source lines first then the lines marked as frequently called
     fun execute() = readSource(inputFileName, preprocessingFlags.toMutableSet())
 
-    private fun readSource(fileName: String, flags: MutableSet<String>): List<SourceLine> {
+    private fun readSource(fileName: String, flags: MutableSet<String>): Pair<List<SourceLine>, List<SourceLine>> {
 
         //Create the File instance from file name, or when it doesn't exist then also search the library dir
         val file = findFile(fileName)
 
         try {
             val source = mutableListOf<SourceLine>()
+            val frequentSource = mutableListOf<SourceLine>()
 
             var lineNumber = 1
             val conditionalFlags = mutableListOf<ConditionalFlag>()
@@ -100,7 +102,10 @@ class SourceReader(
                             //Process included file when line is not skipped
                             line.startsWith("#include") -> {
                                 val includedFile = getDirectiveParameter(line)
-                                readSource(includedFile, flags)
+                                val (includedSrc, includedFreqSrc) = readSource(includedFile, flags)
+                                frequentSource.addAll(includedFreqSrc)
+
+                                includedSrc
                             }
 
                             //Not a special line, add to source when line is not skipped
@@ -121,12 +126,60 @@ class SourceReader(
                 throw Exception("Unfinished #ifdef-#endif pre-processing direction structure")
             }
 
-            return source
+            //Find any sections marked as frequently called and separate it
+            val normalSource = source.extractFrequentSections(frequentSource)
+
+            return Pair(normalSource, frequentSource)
+
         } catch (e: Exception) {
             throw Exception("Failed to read source file: $fileName", e)
         }
     }
 
+    private fun List<SourceLine>.extractFrequentSections(frequentSource: MutableList<SourceLine>): List<SourceLine> {
+        var frequentMode = false
+        val normalSource = mapNotNull { line ->
+
+            when {
+
+                //Start of frequently called section
+                line.content.startsWith("#frequent") -> {
+                    if (frequentMode) {
+                        throw Exception("Section already marked as frequent\n$line")
+                    }
+                    frequentMode = true
+
+                    null
+                }
+
+                //End of frequently called section
+                line.content.startsWith("#endfrequent") -> {
+                    if (!frequentMode) {
+                        throw Exception("Missing #frequent directive\n$line")
+                    }
+                    frequentMode = false
+
+                    null
+                }
+
+                //A line of a frequently called section move it into the special list
+                frequentMode -> {
+                    frequentSource.add(line)
+
+                    null
+                }
+
+                //An ordinary line, remains in the source code
+                else -> line
+            }
+        }
+
+        if (frequentMode) {
+            throw Exception("#frequent directive was not closed in file ${this[0].file?.absolutePath}")
+        }
+
+        return normalSource
+    }
 
     private fun getDirectiveParameter(line: String): String {
         val start = line.indexOfFirst { it == ' ' }

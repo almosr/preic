@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command line option `-d` for creating pre-processing flags.
 - Optimisation `t` for removing `GOTO` command after `THEN` and `ELSE` commands. (Thanks to Rafael Gerlicze for the
   idea.)
+- Pre-processing directive `#frequent` and `#endfrequent` for marking certain part of the code as frequently executed.
+  (Thanks to Rafael Gerlicze for the idea.)
 
 ### Fixed
 

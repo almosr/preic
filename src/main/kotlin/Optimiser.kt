@@ -7,10 +7,28 @@ class Optimiser(
     private val optimisationFlags: List<OptimisationFlag>
 ) {
 
-    fun execute(input: List<SourceLine>): List<SourceLine> =
-        input.removeRemCommands()
+    fun execute(normalSource: List<SourceLine>, frequentSource: List<SourceLine>): List<SourceLine> {
+
+        val source = if (frequentSource.isEmpty()) {
+
+            //No frequently called sections are specified
+            normalSource
+
+        } else {
+
+            //There are lines marked as frequently called, put this in front of all
+            //other lines and jump over.
+            listOf(
+                SourceLine(content = "goto $FREQUENT_SECTIONS_SKIP_LABEL")
+            ) + frequentSource + listOf(
+                SourceLine(content = FREQUENT_SECTIONS_SKIP_LABEL)
+            ) + normalSource
+        }
+
+        return source.removeRemCommands()
             .removeGotoAfterThenOrElse()
             .joinLines()
+    }
 
     fun optimiseWhiteSpace(lineContent: String): String {
         //Is white-space optimisation enabled?
@@ -187,6 +205,8 @@ class Optimiser(
 
     companion object {
         private const val MAX_BASIC_SOURCE_LINE_LENGTH = 256
+
+        private const val FREQUENT_SECTIONS_SKIP_LABEL = "{#preic_skip_frequent_sections}"
 
         private val JOIN_LINE_SPECIAL_COMMANDS = listOf("goto", "go to", "if", "then", "return", "rem")
         private val JOIN_LINE_STARTS_WITH_REGEX = Regex("^(\\{[$LABEL_PREFIX_LINE|$LABEL_PREFIX_LITERAL]+|[0-9]+).*")

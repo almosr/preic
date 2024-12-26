@@ -56,89 +56,98 @@ for {@fire_x} = 2 to 38
     poke{@screen_chars} + {@offset}, {%gfx_fire}
 next:next
 
-{#loop}
-
-//Print debug info when DEBUG pre-processing flag was set
-#ifdef DEBUG
-    {@debug_fighter_y} = int(({@fighter_pos_chars}-{@screen_chars}) / 40)
-    {@debug_fighter_x} = {@fighter_pos_chars}-{@screen_chars}-{@debug_fighter_y} * 40
-    print"{home}{down}{blue}fighter x:";{@debug_fighter_x};"{left} y:";{@debug_fighter_y};"{left} {white}"
-#endif
-
-//Draw firefighter
-poke{@fighter_pos_chars}, {%gfx_fighter_tail}
-
-//Propeller is alternating between two states
-if {@fighter_anim} = 0 then poke{@fighter_pos_chars} - 39, {%gfx_fighter_propeller_1}:{@fighter_anim} = 1:goto {#fighter_skip1}
-   //Else
-   poke {@fighter_pos_chars} - 39, {%gfx_fighter_propeller_2}:{@fighter_anim} = 0
-{#fighter_skip1}
-
-poke {@fighter_pos_chars} + 1, {%gfx_fighter_body}
-poke {@fighter_pos_chars} + 2, {%gfx_fighter_head}
-
-poke {@fighter_pos_colors} + 2, {@gfx_fighter_color}
-
-//Clear behind fighter
-poke {@fighter_pos_chars} - 1, {%gfx_clear}:poke {@fighter_pos_chars} - 40, {%gfx_clear}
-
-if {@bomb_pos_chars} = 0 then goto {#skip_bomb}
-   //Else
-
-   //Have the bomb hit fire?
-   if peek({@bomb_pos_chars}) <> {%gfx_clear} then {@score} = {@score} + 1:{@fire_counter} = {@fire_counter} - 1:if {@fire_counter} = 0 then goto {#win}
-
-   //Draw bomb
-   poke {@bomb_pos_chars}, {%gfx_bomb}
-   poke {@bomb_pos_chars} - 40, {%gfx_clear}
-   poke {@bomb_pos_colors}, {@gfx_bomb_color}
-   {@bomb_pos_chars} = {@bomb_pos_chars} + 40
-   {@bomb_pos_colors} = {@bomb_pos_colors} + 40
-
-   //Have the bomb reached the bottom of the screen?
-   if {@bomb_pos_chars} - {@screen_chars} > 1000 then poke {@bomb_pos_chars} - 40, {%gfx_clear}:{@bomb_pos_chars} = 0
-{#skip_bomb}
-
-
-//Move firefighter
-{@fighter_counter} = {@fighter_counter} - 1
-if {@fighter_counter} <> 0 then goto {#no_move}
-	//Else
-
-	//Move firefighter
-	{@fighter_counter} = {@fighter_speed}
-    {@fighter_pos_chars} = {@fighter_pos_chars} + 1
-    {@fighter_pos_colors} = {@fighter_pos_colors} + 1
-	
-	//Check new position whether firefighter hits the fire
-	if peek({@fighter_pos_chars} + 2) = {%gfx_fire} then goto {#collision}
-
-{#no_move}
-
-
-//Read keyboard
-get {@key$}
-
-//Is it space to drop 
-if {@key$} <> {%key_bomb} or {@bomb_pos_chars} <> 0 then goto {#no_bomb}
-    //Else
-
-    //Launch water bomb
-	{@bomb_pos_chars} = {@fighter_pos_chars} + 41
-	{@bomb_pos_colors} = {@fighter_pos_colors} + 41
-	
-	//Lose 5 points from score for each water bomb
-	{@score} = {@score} - 5
-	
-	//Don't go negative with the score, though :)
-	if {@score} < 0 then {@score} = 0
-{#no_bomb}
-
-gosub {#print_score}
-
-//Back to game loop
+//This is an important jump here, the main loop is marked as frequently called,
+//so it will be moved. The execution will not be flowing to it naturally.
 goto {#loop}
 
+//Start of the main loop
+#frequent
+
+  {#loop}
+
+  //Print debug info when DEBUG pre-processing flag was set
+  #ifdef DEBUG
+      {@debug_fighter_y} = int(({@fighter_pos_chars}-{@screen_chars}) / 40)
+      {@debug_fighter_x} = {@fighter_pos_chars}-{@screen_chars}-{@debug_fighter_y} * 40
+      print"{home}{down}{blue}fighter x:";{@debug_fighter_x};"{left} y:";{@debug_fighter_y};"{left} {white}"
+  #endif
+
+  //Draw firefighter
+  poke{@fighter_pos_chars}, {%gfx_fighter_tail}
+
+  //Propeller is alternating between two states
+  if {@fighter_anim} = 0 then poke{@fighter_pos_chars} - 39, {%gfx_fighter_propeller_1}:{@fighter_anim} = 1:goto {#fighter_skip1}
+     //Else
+     poke {@fighter_pos_chars} - 39, {%gfx_fighter_propeller_2}:{@fighter_anim} = 0
+  {#fighter_skip1}
+
+  poke {@fighter_pos_chars} + 1, {%gfx_fighter_body}
+  poke {@fighter_pos_chars} + 2, {%gfx_fighter_head}
+
+  poke {@fighter_pos_colors} + 2, {@gfx_fighter_color}
+
+  //Clear behind fighter
+  poke {@fighter_pos_chars} - 1, {%gfx_clear}:poke {@fighter_pos_chars} - 40, {%gfx_clear}
+
+  if {@bomb_pos_chars} = 0 then goto {#skip_bomb}
+     //Else
+
+     //Have the bomb hit fire?
+     if peek({@bomb_pos_chars}) <> {%gfx_clear} then {@score} = {@score} + 1:{@fire_counter} = {@fire_counter} - 1:if {@fire_counter} = 0 then goto {#win}
+
+     //Draw bomb
+     poke {@bomb_pos_chars}, {%gfx_bomb}
+     poke {@bomb_pos_chars} - 40, {%gfx_clear}
+     poke {@bomb_pos_colors}, {@gfx_bomb_color}
+     {@bomb_pos_chars} = {@bomb_pos_chars} + 40
+     {@bomb_pos_colors} = {@bomb_pos_colors} + 40
+
+     //Have the bomb reached the bottom of the screen?
+     if {@bomb_pos_chars} - {@screen_chars} > 1000 then poke {@bomb_pos_chars} - 40, {%gfx_clear}:{@bomb_pos_chars} = 0
+  {#skip_bomb}
+
+
+  //Move firefighter
+  {@fighter_counter} = {@fighter_counter} - 1
+  if {@fighter_counter} <> 0 then goto {#no_move}
+  	//Else
+
+  	//Move firefighter
+  	{@fighter_counter} = {@fighter_speed}
+      {@fighter_pos_chars} = {@fighter_pos_chars} + 1
+      {@fighter_pos_colors} = {@fighter_pos_colors} + 1
+
+  	//Check new position whether firefighter hits the fire
+  	if peek({@fighter_pos_chars} + 2) = {%gfx_fire} then goto {#collision}
+
+  {#no_move}
+
+
+  //Read keyboard
+  get {@key$}
+
+  //Is it space to drop
+  if {@key$} <> {%key_bomb} or {@bomb_pos_chars} <> 0 then goto {#no_bomb}
+      //Else
+
+      //Launch water bomb
+  	{@bomb_pos_chars} = {@fighter_pos_chars} + 41
+  	{@bomb_pos_colors} = {@fighter_pos_colors} + 41
+
+  	//Lose 5 points from score for each water bomb
+  	{@score} = {@score} - 5
+
+  	//Don't go negative with the score, though :)
+  	if {@score} < 0 then {@score} = 0
+  {#no_bomb}
+
+  gosub {#print_score}
+
+  //Back to game loop
+  goto {#loop}
+
+//The end of the main loop
+#endfrequent
 
 {#collision}
 
@@ -168,9 +177,11 @@ goto {#next_level}
 // Routines
 //---------------------------
 
-//*** Print score to the top-left corner of the screen
-{#print_score} print "{home}{right}{right}{right}{right}{right}{right} ";{@score};" "
-return
+#frequent
+  //*** Print score to the top-left corner of the screen
+  {#print_score} print "{home}{right}{right}{right}{right}{right}{right} ";{@score};" "
+  return
+#endfrequent
 
 //*** Animated text with screen flashing
 //***
