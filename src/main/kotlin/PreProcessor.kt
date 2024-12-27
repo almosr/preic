@@ -200,16 +200,20 @@ class PreProcessor(
             (name to "")
         }
 
+        val type = when (postfix) {
+            "$" -> VariableType.STRING
+            "%" -> VariableType.INTEGER
+            "" -> VariableType.FLOAT
+
+            else -> throw Exception("Unexpected variable postfix")
+        }
+
         return Label.Variable(
             name = name,
             originalFormat = originalLabel,
-            type = when (postfix) {
-                "$" -> VariableType.STRING
-                "%" -> VariableType.INTEGER
-                else -> VariableType.FLOAT
-            },
+            type = type,
             frequent = frequent,
-            basicName = variableNameRepository.getNewName(baseName) + postfix
+            basicName = variableNameRepository.getNewName(baseName, type) + postfix
         ).also { labels[originalLabel] = it }
     }
 

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.1] - unreleased
 
+### Fixed
+
+- Variable type was not considered when BASIC variable names are picked, now same name can be reused for different
+  types.
+
 ## [1.2.0] - 2024-12-27
 
 ### Added
@@ -28,8 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove whitespace from beginning and end of literal label values.
 - Selecting BASIC variable names to accept non-alphanumeric characters in the label name, but pick valid BASIC variable
   name instead.
-- Variable type was not considered when BASIC variable names are picked, now same name can be reused for different
-  types.
 
 ## [1.1.0] - 2024-12-21
 

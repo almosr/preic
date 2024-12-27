@@ -1,10 +1,12 @@
+import models.VariableType
+
 class VariableNameRepository(
     private val shortNames: Boolean
 ) {
 
-    private val variableNames = mutableListOf<String>()
+    private val variableNames = mutableListOf<VariableName>()
 
-    fun getNewName(name: String): String {
+    fun getNewName(name: String, type: VariableType): String {
 
         //Very unlikely, but have we reached the theoretical limit of names?
         if (variableNames.size == MAX_NAMES) {
@@ -20,14 +22,14 @@ class VariableNameRepository(
             name.take(2).lowercase()
         }
 
-        if (simplifiedName.isValidName()) {
-            variableNames.add(simplifiedName)
+        if (simplifiedName.isValidName(type)) {
+            variableNames.add(VariableName(simplifiedName, type))
             return simplifiedName
         }
 
         //This name already exists, generate a new name by incrementing the characters
         var newName = simplifiedName
-        while (!newName.isValidName()) {
+        while (!newName.isValidName(type)) {
 
             if (shortNames) {
 
@@ -65,7 +67,7 @@ class VariableNameRepository(
             newName = name(LETTERS[0], POSSIBLE_CHARACTERS[0])
         }
 
-        variableNames.add(newName)
+        variableNames.add(VariableName(newName, type))
         return newName
     }
 
@@ -103,9 +105,9 @@ class VariableNameRepository(
         }
     }
 
-    private fun String.isValidName() =
+    private fun String.isValidName(type: VariableType) =
         VALID_VARIABLE_NAME_REGEX.matches(this) &&
-                !variableNames.contains(this) &&
+                !variableNames.contains(VariableName(this, type)) &&
                 !FORBIDDEN_NAMES.contains(this.take(2))
 
     private fun name(firstChar: Char, secondChar: Char?) = "$firstChar${secondChar ?: ""}"
@@ -144,4 +146,8 @@ class VariableNameRepository(
         )
     }
 
+    private data class VariableName(
+        val name: String,
+        val type: VariableType
+    )
 }
