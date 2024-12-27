@@ -1,4 +1,6 @@
-class VariableNameRepository {
+class VariableNameRepository(
+    private val shortNames: Boolean
+) {
 
     private val variableNames = mutableListOf<String>()
 
@@ -9,10 +11,14 @@ class VariableNameRepository {
             throw Exception("Too many variable names have been generated")
         }
 
-        //Try to use the first two characters of the name if possible
-        val simplifiedName = name
-            //Take up to two characters from the beginning of the name
-            .take(2).lowercase()
+        val simplifiedName = if (shortNames) {
+            //Short names always start from one letter
+            LETTERS[0].toString()
+        } else {
+
+            //Try to use the first two characters of the name if possible
+            name.take(2).lowercase()
+        }
 
         if (simplifiedName.isValidName()) {
             variableNames.add(simplifiedName)
@@ -23,24 +29,36 @@ class VariableNameRepository {
         var newName = simplifiedName
         while (!newName.isValidName()) {
 
-            //Bump second character, when doesn't exist then start from beginning
-            val secondChar = if (newName.length > 1) {
-                POSSIBLE_CHARACTERS.indexOf(newName[1]) + 1
-            } else {
-                0
-            }
-            if (POSSIBLE_CHARACTERS.size > secondChar) {
-                //Still within bounds
-                newName = name(newName[0], POSSIBLE_CHARACTERS[secondChar])
-                continue
-            }
+            if (shortNames) {
 
-            //Ran out of characters for the second character, bump the first one
-            val firstChar = LETTERS.indexOf(newName[0]) + 1
-            if (LETTERS.size > firstChar) {
-                //Still within bounds
-                newName = name(LETTERS[firstChar], POSSIBLE_CHARACTERS[0])
-                continue
+                //Bump first character, when doesn't exist then start from beginning
+                val bumpedFirstCharName = bumpFirstChar(newName)
+                if (bumpedFirstCharName != null) {
+                    newName = bumpedFirstCharName
+                    continue
+                }
+
+                //Ran out of characters for the first character, bump the second one
+                val bumpedSecondCharName = bumpSecondChar(newName)
+                if (bumpedSecondCharName != null) {
+                    newName = bumpedSecondCharName
+                    continue
+                }
+            } else {
+
+                //Bump second character, when doesn't exist then start from beginning
+                val bumpedSecondCharName = bumpSecondChar(newName)
+                if (bumpedSecondCharName != null) {
+                    newName = bumpedSecondCharName
+                    continue
+                }
+
+                //Ran out of characters for the second character, bump the first one
+                val bumpedFirstCharName = bumpFirstChar(newName)
+                if (bumpedFirstCharName != null) {
+                    newName = bumpedFirstCharName
+                    continue
+                }
             }
 
             //Ran out of letters, start from the beginning of the combinations
@@ -51,12 +69,46 @@ class VariableNameRepository {
         return newName
     }
 
+    private fun bumpFirstChar(name: String): String? {
+        val firstChar = LETTERS.indexOf(name[0]) + 1
+        return if (LETTERS.size > firstChar) {
+            //Still within bounds
+            name(
+                LETTERS[firstChar],
+
+                //When the name is already two character long then pick a possible character for second
+                if (name.length == 2) {
+                    POSSIBLE_CHARACTERS[0]
+                } else {
+                    null
+                }
+            )
+        } else {
+            null
+        }
+    }
+
+    private fun bumpSecondChar(name: String): String? {
+        val secondChar = if (name.length > 1) {
+            POSSIBLE_CHARACTERS.indexOf(name[1]) + 1
+        } else {
+            0
+        }
+
+        return if (POSSIBLE_CHARACTERS.size > secondChar) {
+            //Still within bounds
+            name(name[0], POSSIBLE_CHARACTERS[secondChar])
+        } else {
+            null
+        }
+    }
+
     private fun String.isValidName() =
         VALID_VARIABLE_NAME_REGEX.matches(this) &&
                 !variableNames.contains(this) &&
                 !FORBIDDEN_NAMES.contains(this.take(2))
 
-    private fun name(firstChar: Char, secondChar: Char) = "$firstChar$secondChar"
+    private fun name(firstChar: Char, secondChar: Char?) = "$firstChar${secondChar ?: ""}"
 
     companion object {
         private val DIGITS = ('0'..'9').toList()

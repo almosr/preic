@@ -60,8 +60,13 @@ enum class ProcessingFlag(val commandLineFlag: Char, val description: String) {
 
     CONVERT_HEXADECIMAL_NUMBERS(
         '$',
-        "Convert hexadecimal numbers to decimal, hexadecimal numbers should be prefixed with double dollar signs ($$).",
-    )
+        "convert hexadecimal numbers to decimal, hexadecimal numbers should be prefixed with double dollar signs ($$).",
+    ),
+
+    SHORT_VARIABLE_NAMES(
+        'v',
+        "use as many one character long name as possible instead of trying to keep any resemblance with the original variable names.",
+    ),
 }
 
 /**

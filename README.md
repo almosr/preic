@@ -145,10 +145,12 @@ Parameters are:
   possible to use a collection of routines or definitions from a generic folder outside the current project.
 - `-p <processing flags>` - optional processing flags, when set then relevant processing will be completed on the
   output:
-    * `$` - Convert hexadecimal numbers to decimal, hexadecimal numbers should be prefixed with double dollar signs
+    * `$` - convert hexadecimal numbers to decimal, hexadecimal numbers should be prefixed with double dollar signs
       (`$$`). String literals are not considered with this processing, hexadecimal numbers inside string literals will
       also be converted. Both upper or lowercase letters and leading zeroes can be used in the hexadecimal number, any
       character that is not a hexadecimal digit terminates the number.
+    * `v` - use as many one character long name as possible instead of trying to keep any resemblance with the original
+      variable names.
 
 - `-o <optim flags>` - optional optimisation flags, when set then relevant processing will be completed on the output:
     * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and

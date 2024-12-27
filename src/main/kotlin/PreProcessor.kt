@@ -8,7 +8,9 @@ class PreProcessor(
     private val optimiser: Optimiser,
     private val processingFlags: List<ProcessingFlag>
 ) {
-    private val variableNameRepository = VariableNameRepository()
+    private val variableNameRepository = VariableNameRepository(
+        shortNames = processingFlags.contains(ProcessingFlag.SHORT_VARIABLE_NAMES)
+    )
     private val labels = mutableMapOf<String, Label>()
     private var basicLineNumber = 0
 

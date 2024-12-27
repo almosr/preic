@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command line option `-d` for creating pre-processing flags.
 - Optimisation `t` for removing `GOTO` command after `THEN` and `ELSE` commands. (Thanks to Rafael Gerlicze for the
   idea.)
+- Processing flag `v` for using short, one character long variable names when possible. (Thanks to Csaba "Csabo"
+  Pankaczy for the idea.)
 - Pre-processing directive `#frequent` and `#endfrequent` for marking certain part of the code as frequently executed.
   (Thanks to Rafael Gerlicze for the idea.)
 - Flag for frequently used variables to be defined as early as possible. (Thanks to Rafael Gerlicze for the idea.)
@@ -24,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove whitespace from beginning and end of literal label values.
 - Selecting BASIC variable names to accept non-alphanumeric characters in the label name, but pick valid BASIC variable
   name instead.
+- Variable type was not considered when BASIC variable names are picked, now same name can be reused for different
+  types.
 
 ## [1.1.0] - 2024-12-21
 
@@ -41,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Handling of one character variable names, previously these names could cause processing errors.
+- Handling of one character long variable names, previously these names could cause processing errors.
 - Join line optimisation when a line started with a label then it was joined with the next line if that did not start
   with a label.
 
