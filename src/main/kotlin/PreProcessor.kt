@@ -360,8 +360,8 @@ class PreProcessor(
             //Check for missing equal sign at the beginning, when missing then this is not a definition
             content[0] != '=' -> null
 
-            //Remove equal sign and return the rest as literal value
-            else -> content.drop(1)
+            //Remove equal sign and white space then return the rest as literal value
+            else -> content.drop(1).trim()
         }
 
     companion object {
