@@ -52,7 +52,9 @@ class VariableNameRepository {
     }
 
     private fun String.isValidName() =
-        !variableNames.contains(this) && !FORBIDDEN_NAMES.contains(this.take(2))
+        VALID_VARIABLE_NAME_REGEX.matches(this) &&
+                !variableNames.contains(this) &&
+                !FORBIDDEN_NAMES.contains(this.take(2))
 
     private fun name(firstChar: Char, secondChar: Char) = "$firstChar$secondChar"
 
@@ -66,6 +68,10 @@ class VariableNameRepository {
         //Maximum number of possibilities for a valid BASIC variable name:
         //first character should always be a letter, second can be letter or digit.
         private val MAX_NAMES = LETTERS.size * POSSIBLE_CHARACTERS.size
+
+        //Valid variable name must start with a lowercase letter and
+        //optionally continue with a lowercase letter or digit
+        private val VALID_VARIABLE_NAME_REGEX = Regex("^[a-z]+[a-z0-9]*$")
 
         //Certain character combinations are not valid BASIC names because there
         //is command with the same name in some dialects.

@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Handling of space character in path names for included files.
 - Remove whitespace from beginning and end of literal label values.
+- Selecting BASIC variable names to accept non-alphanumeric characters in the label name, but pick valid BASIC variable
+  name instead.
 
 ## [1.1.0] - 2024-12-21
 
