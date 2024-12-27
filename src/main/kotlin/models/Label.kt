@@ -20,7 +20,9 @@ sealed interface Label {
     data class Variable(
         override val name: String,
         override val originalFormat: String,
-        val basicName: String
+        val basicName: String,
+        val type: VariableType,
+        val frequent: Boolean,
     ) : Label {
         override val output: String
             get() = basicName
@@ -36,4 +38,10 @@ sealed interface Label {
         override val output: String
             get() = value
     }
+}
+
+enum class VariableType {
+    STRING,
+    INTEGER,
+    FLOAT,
 }

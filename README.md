@@ -151,12 +151,12 @@ Parameters are:
       character that is not a hexadecimal digit terminates the number.
 
 - `-o <optim flags>` - optional optimisation flags, when set then relevant processing will be completed on the output:
-  * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
-    fewer lines make the program run faster.
-  * `r` - remove `REM` BASIC commands from source to make it run faster and occupy less memory.
-  * `t` - remove `GOTO` command after `THEN` and `ELSE` commands which is unnecessary for jumping to a line.
-  * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and
-    inside strings.
+    * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
+      fewer lines make the program run faster.
+    * `r` - remove `REM` BASIC commands from source to make it run faster and occupy less memory.
+    * `t` - remove `GOTO` command after `THEN` and `ELSE` commands which is unnecessary for jumping to a line.
+    * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and
+      inside strings.
 
   _Warning_: since the tool does not interpret the source, optimisations could cause runtime issues with some specific
   source code.
@@ -348,6 +348,21 @@ fruit 42  3.14
 
 While this format is not required, it is easier to read and understand than adding the postfix after the closing curly
 bracket, like: `{$pear}$="fruit"`. However, this format is also supported.
+
+Commodore BASIC does not maintain a table or hash of variable addresses in memory, it crawls through the entire list of
+variables to find the one it is looking for. Therefore, resolving a variable name every time when the program is
+referring to it is rather slow. Ideally, frequently used variables are defined early in the program, so these would be
+found faster. This can be done manually by creating the variables at the beginning of the program, but keeping in mind
+which variables are used frequently and maintaining that list is rather painful.
+
+Pre-processing offers you a way to solve this optimisation: when you start the name of the variable with an exclamation
+mark (`!`) then processing flags the variable as frequently used and adds the creation of the variable to the very first
+line of the program automatically. No need to start the name with exclamation mark every time you refer to the variable,
+it is enough to signal this property once anywhere in the program.
+
+**Please note:** when you use `CLR` command (that removes all previously defined variables) then the effect of this
+latter optimisation will be lost unless you jump back to the beginning of the program. If you need to do this for any
+reason then better to use the `RUN` command.
 
 #### Literal label
 

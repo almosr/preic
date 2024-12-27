@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   idea.)
 - Pre-processing directive `#frequent` and `#endfrequent` for marking certain part of the code as frequently executed.
   (Thanks to Rafael Gerlicze for the idea.)
+- Flag for frequently used variables to be defined as early as possible. (Thanks to Rafael Gerlicze for the idea.)
 
 ### Fixed
 

@@ -14,14 +14,14 @@
 {@fighter_speed} = 5
 
 //Reset score
-{@score} = 0
+{@!score} = 0
 
 //Start of the level setup
 {#next_level}
 
 //Init game
 {@fighter_pos} = 3 * 40 + 1
-{@fighter_pos_chars} = {@fighter_pos} + {@screen_chars}
+{@fighter_pos_chars} = {@fighter_pos} + {@!screen_chars}
 {@fighter_pos_colors} = {@fighter_pos} + {@screen_colors}
 {@fighter_anim} = 0
 {@fighter_counter} = {@fighter_speed}
@@ -73,10 +73,10 @@ goto {#loop}
   #endif
 
   //Draw firefighter
-  poke{@fighter_pos_chars}, {%gfx_fighter_tail}
+  poke{@!fighter_pos_chars}, {%gfx_fighter_tail}
 
   //Propeller is alternating between two states
-  if {@fighter_anim} = 0 then poke{@fighter_pos_chars} - 39, {%gfx_fighter_propeller_1}:{@fighter_anim} = 1:goto {#fighter_skip1}
+  if {@!fighter_anim} = 0 then poke{@fighter_pos_chars} - 39, {%gfx_fighter_propeller_1}:{@fighter_anim} = 1:goto {#fighter_skip1}
      //Else
      poke {@fighter_pos_chars} - 39, {%gfx_fighter_propeller_2}:{@fighter_anim} = 0
   {#fighter_skip1}
@@ -84,7 +84,7 @@ goto {#loop}
   poke {@fighter_pos_chars} + 1, {%gfx_fighter_body}
   poke {@fighter_pos_chars} + 2, {%gfx_fighter_head}
 
-  poke {@fighter_pos_colors} + 2, {@gfx_fighter_color}
+  poke {@!fighter_pos_colors} + 2, {@gfx_fighter_color}
 
   //Clear behind fighter
   poke {@fighter_pos_chars} - 1, {%gfx_clear}:poke {@fighter_pos_chars} - 40, {%gfx_clear}
@@ -93,7 +93,7 @@ goto {#loop}
      //Else
 
      //Have the bomb hit fire?
-     if peek({@bomb_pos_chars}) <> {%gfx_clear} then {@score} = {@score} + 1:{@fire_counter} = {@fire_counter} - 1:if {@fire_counter} = 0 then goto {#win}
+     if peek({@bomb_pos_chars}) <> {%gfx_clear} then {@score} = {@score} + 1:{@!fire_counter} = {@fire_counter} - 1:if {@fire_counter} = 0 then goto {#win}
 
      //Draw bomb
      poke {@bomb_pos_chars}, {%gfx_bomb}
@@ -131,8 +131,8 @@ goto {#loop}
       //Else
 
       //Launch water bomb
-  	{@bomb_pos_chars} = {@fighter_pos_chars} + 41
-  	{@bomb_pos_colors} = {@fighter_pos_colors} + 41
+  	{@!bomb_pos_chars} = {@fighter_pos_chars} + 41
+  	{@!bomb_pos_colors} = {@fighter_pos_colors} + 41
 
   	//Lose 5 points from score for each water bomb
   	{@score} = {@score} - 5
