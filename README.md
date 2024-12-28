@@ -362,6 +362,9 @@ mark (`!`) then processing flags the variable as frequently used and adds the cr
 line of the program automatically. No need to start the name with exclamation mark every time you refer to the variable,
 it is enough to signal this property once anywhere in the program.
 
+Combined with processing flag `v` the variables that are marked as frequently used will have one character long name be
+assigned to it if possible. This way dealing with these variables will be a little bit faster.
+
 **Please note:** when you use `CLR` command (that removes all previously defined variables) then the effect of this
 latter optimisation will be lost unless you jump back to the beginning of the program. If you need to do this for any
 reason then better to use the `RUN` command.

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.1] - unreleased
 
+### Added
+
+- Check for variables that are marked as frequently used to assign short BASIC names to these variables.
+
 ### Fixed
 
 - Variable type was not considered when BASIC variable names are picked, now same name can be reused for different

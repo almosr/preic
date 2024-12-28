@@ -53,7 +53,8 @@ class PreProcessor(
 
     private fun List<SourceLine>.processLabels(): List<SourceLine> {
 
-        //First scan for variable labels
+        //First scan for variable labels and collect them into a map
+        val variables = mutableMapOf<String, Variable>()
         forEach { line ->
             LABEL_VARIABLE_REGEX.findAll(line.content).forEach {
 
@@ -71,11 +72,11 @@ class PreProcessor(
 
                 //Re-create the original label without frequent flag
                 val originalLabel = "{$LABEL_PREFIX_VARIABLE$variableName}"
-                val existingLabel = labels[originalLabel] as? Label.Variable
-                labels[originalLabel] = when {
+                val existingLabel = variables[originalLabel]
+                variables[originalLabel] = when {
                     //When doesn't exist then create it
                     existingLabel == null ->
-                        createVariableLabel(variableName, originalLabel, frequent)
+                        Variable(variableName, originalLabel, frequent)
 
                     //When exists, but flagged as frequent then update flag
                     frequent -> existingLabel.copy(frequent = true)
@@ -85,6 +86,14 @@ class PreProcessor(
                 }
             }
         }
+
+        //Create actual variable labels out of the collected map,
+        //frequent variables should be considered first for name assignment.
+        variables.values
+            .sortedBy { !it.frequent }
+            .forEach {
+                labels[it.originalName] = it.createVariableLabel()
+            }
 
         //Produce the list of frequent variable initialisation
         val frequentVariables = labels.values
@@ -191,7 +200,7 @@ class PreProcessor(
         }
     }
 
-    private fun createVariableLabel(name: String, originalLabel: String, frequent: Boolean): Label.Variable {
+    private fun Variable.createVariableLabel(): Label.Variable {
         //Is this variable name coming with a type postfix?
         //Separate base name and postfix
         val (baseName, postfix) = if (name.last() in listOf('$', '%')) {
@@ -210,11 +219,11 @@ class PreProcessor(
 
         return Label.Variable(
             name = name,
-            originalFormat = originalLabel,
+            originalFormat = originalName,
             type = type,
             frequent = frequent,
             basicName = variableNameRepository.getNewName(baseName, type) + postfix
-        ).also { labels[originalLabel] = it }
+        )
     }
 
     private fun checkLabelBlocks(line: SourceLine) {
@@ -369,6 +378,12 @@ class PreProcessor(
             //Remove equal sign and white space then return the rest as literal value
             else -> content.drop(1).trim()
         }
+
+    private data class Variable(
+        val name: String,
+        val originalName: String,
+        val frequent: Boolean,
+    )
 
     companion object {
         const val LABEL_PREFIX_LINE = '#'
