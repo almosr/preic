@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Missing file and line info from pre-processing directive error.
+- Line joining when previous line finished with an `END` command.
 
 ## [1.2.1] - 2024-12-29
 
