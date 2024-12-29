@@ -44,9 +44,9 @@ for {@fire_x} = 2 to 38
   for {@fire_y} = 24 to 24 - {@fire_height} step -1
     {@offset} = {@fire_y} * 40 + {@fire_x}
 	if {@fire_y} < {@fire_middle} then goto {#fire_top}
-		//Else
-		poke{@screen_colors} + {@offset}, {@gfx_fire_color_1}
-		goto {#fire_next}
+        //Else
+        poke{@screen_colors} + {@offset}, {@gfx_fire_color_1}
+        goto {#fire_next}
 
 	{#fire_top}
 	//Top half of the fire is different color
@@ -113,9 +113,9 @@ goto {#loop}
   	//Else
 
   	//Move firefighter
-  	{@fighter_counter} = {@fighter_speed}
-      {@fighter_pos_chars} = {@fighter_pos_chars} + 1
-      {@fighter_pos_colors} = {@fighter_pos_colors} + 1
+    {@fighter_counter} = {@fighter_speed}
+    {@fighter_pos_chars} = {@fighter_pos_chars} + 1
+    {@fighter_pos_colors} = {@fighter_pos_colors} + 1
 
   	//Check new position whether firefighter hits the fire
   	if peek({@fighter_pos_chars} + 2) = {%gfx_fire} then goto {#collision}
@@ -128,14 +128,14 @@ goto {#loop}
 
   //Is it space to drop
   if {@key$} <> {%key_bomb} or {@bomb_pos_chars} <> 0 then goto {#no_bomb}
-      //Else
+    //Else
 
-      //Launch water bomb
-  	{@!bomb_pos_chars} = {@fighter_pos_chars} + 41
-  	{@!bomb_pos_colors} = {@fighter_pos_colors} + 41
+    //Launch water bomb
+    {@!bomb_pos_chars} = {@fighter_pos_chars} + 41
+    {@!bomb_pos_colors} = {@fighter_pos_colors} + 41
 
-  	//Lose 5 points from score for each water bomb
-  	{@score} = {@score} - 5
+    //Lose 5 points from score for each water bomb
+    {@score} = {@score} - 5
 
   	//Don't go negative with the score, though :)
   	if {@score} < 0 then {@score} = 0
