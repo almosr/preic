@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.0] - unreleased
 
+### Fixed
+
+- Missing file and line info from pre-processing directive error.
+
 ## [1.2.1] - 2024-12-29
 
 ### Added

@@ -83,25 +83,30 @@ class SourceReader(
 
                             //Define pre-processing flag when line is not skipped
                             line.startsWith("#define") -> {
-                                flags.add(getDirectiveParameter(line))
+                                flags.add(getDirectiveParameter(line, file, lineNumber))
                                 emptyList()
                             }
 
                             //Un-define (remove) pre-processing flag when line is not skipped
                             line.startsWith("#undef") -> {
-                                flags.remove(getDirectiveParameter(line))
+                                flags.remove(getDirectiveParameter(line, file, lineNumber))
                                 emptyList()
                             }
 
                             //Beginning of conditional compiling when line is not skipped
                             line.startsWith("#ifdef") -> {
-                                conditionalFlags.add(ConditionalFlag(getDirectiveParameter(line), whenPresent = true))
+                                conditionalFlags.add(
+                                    ConditionalFlag(
+                                        getDirectiveParameter(line, file, lineNumber),
+                                        whenPresent = true
+                                    )
+                                )
                                 emptyList()
                             }
 
                             //Process included file when line is not skipped
                             line.startsWith("#include") -> {
-                                val includedFile = getDirectiveParameter(line)
+                                val includedFile = getDirectiveParameter(line, file, lineNumber)
                                 val (includedSrc, includedFreqSrc) = readSource(includedFile, flags)
                                 frequentSource.addAll(includedFreqSrc)
 
@@ -181,10 +186,10 @@ class SourceReader(
         return normalSource
     }
 
-    private fun getDirectiveParameter(line: String): String {
+    private fun getDirectiveParameter(line: String, file: File, lineNumber: Int): String {
         val start = line.indexOfFirst { it == ' ' }
         if (start == -1) {
-            throw Exception("Parameter is missing for pre-processing directive")
+            throw Exception("Parameter is missing for pre-processing directive\n${file.absolutePath}:$lineNumber\n\"$line\"")
         }
 
         return line.substring(start + 1).trim()
