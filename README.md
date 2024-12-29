@@ -91,15 +91,15 @@ if {@bomb_pos_chars} = 0 then goto {#skip_bomb}
 //Move firefighter
 {@fighter_counter} = {@fighter_counter} - 1
 if {@fighter_counter} <> 0 then goto {#no_move}
-	//Else
+    //Else
 
-	//Move firefighter
-	{@fighter_counter} = {@fighter_speed}
+    //Move firefighter
+    {@fighter_counter} = {@fighter_speed}
     {@fighter_pos_chars} = {@fighter_pos_chars} + 1
     {@fighter_pos_colors} = {@fighter_pos_colors} + 1
-	
-	//Check new position whether firefighter hits the fire
-	if peek({@fighter_pos_chars} + 2) = {%gfx_fire} then goto {#collision}
+
+    //Check new position whether firefighter hits the fire
+    if peek({@fighter_pos_chars} + 2) = {%gfx_fire} then goto {#collision}
 
 {#no_move}
 
@@ -210,7 +210,7 @@ Processing is going to take over this burden, you don't have to number the lines
 increases the line numbers by 1 to keep the program compact. If you want a specific line number then you can start the
 line with the number and auto-numbering picks up that line number starting from that line.
 
-### Hexadecimal numbers
+#### Hexadecimal numbers
 
 When PEEK/POKE is used in a BASIC program the referred memory address has to be in decimal format since the interpreter
 cannot deal with hexadecimal numbers. This is rather annoying when someone already got used to for example dealing with
@@ -337,9 +337,9 @@ Would be turned into:
 
 ```
 0 pe$="fruit"
-1 pf%=42
-2 pg=3.14
-3 print pe$;pf%;pg
+1 pe%=42
+2 pe=3.14
+3 print pe$;pe%;pe
 ```
 
 Then the output would be:
@@ -363,7 +363,9 @@ line of the program automatically. No need to start the name with exclamation ma
 it is enough to signal this property once anywhere in the program.
 
 Combined with processing flag `v` the variables that are marked as frequently used will have one character long name be
-assigned to it if possible. This way dealing with these variables will be a little bit faster.
+assigned to it if possible. This way dealing with these variables will be a little bit faster. In this case it is
+advisable to specify the type of the variable inside the label (e.g. `{@key$}` instead of `{@key}$`), so variable names
+can be re-used for different types.
 
 **Please note:** when you use `CLR` command (that removes all previously defined variables) then the effect of this
 latter optimisation will be lost unless you jump back to the beginning of the program. If you need to do this for any
