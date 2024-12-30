@@ -92,7 +92,7 @@ goto {#loop}
   if {@bomb_pos_chars} = 0 then goto {#skip_bomb}
      //Else
 
-     //Have the bomb hit fire?
+     //Has the bomb hit fire?
      if peek({@bomb_pos_chars}) <> {%gfx_clear} then {@score} = {@score} + 1:{@!fire_counter} = {@fire_counter} - 1:if {@fire_counter} = 0 then goto {#win}
 
      //Draw bomb
@@ -102,7 +102,7 @@ goto {#loop}
      {@bomb_pos_chars} = {@bomb_pos_chars} + 40
      {@bomb_pos_colors} = {@bomb_pos_colors} + 40
 
-     //Have the bomb reached the bottom of the screen?
+     //Has the bomb reached the bottom of the screen?
      if {@bomb_pos_chars} - {@screen_chars} > 1000 then poke {@bomb_pos_chars} - 40, {%gfx_clear}:{@bomb_pos_chars} = 0
   {#skip_bomb}
 

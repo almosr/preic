@@ -74,7 +74,7 @@ And here is the original source that was fed into pre-processing:
 if {@bomb_pos_chars} = 0 then goto {#skip_bomb}
    //Else
 
-   //Have the bomb hit fire?
+   //Has the bomb hit fire?
    if peek({@bomb_pos_chars}) <> {%gfx_clear} then {@score} = {@score} + 1:{@fire_counter} = {@fire_counter} - 1:if {@fire_counter} = 0 then goto {#win}
 
    //Draw bomb
@@ -430,7 +430,7 @@ The output for this code fragment will be:
 poke2041,0
 ```
 
-When literal labels are referring to each other then it is possible to end up with an infinite recursion. When the tool
+When literal labels are referring to each other than it is possible to end up with an infinite recursion. When the tool
 processes the same line more than 100 times and still not finished with the labels then it throws an error because most
 likely the labels are replacing each other in an infinite recursion.
 
@@ -539,7 +539,7 @@ There is no limit on the size of the frequently called sections, however having 
 sections might defeat the purpose of this optimisation. Use it wisely, testing the speed of your code might help you to
 decide which part should be marked as frequent.
 
-**Important***: when multiple sections are marked as frequently called then the order of these sections at the beginning
+**Important**: when multiple sections are marked as frequently called then the order of these sections at the beginning
 of the program will be arbitrary. Do not count on any side effects of the ordering, it could change together with your
 code or when a new tool version is released.
 
