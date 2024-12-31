@@ -1,72 +1,60 @@
-import PreProcessor.Companion.LABEL_PREFIX_LINE
-import PreProcessor.Companion.LABEL_PREFIX_LITERAL
+import Constants.LABEL_PREFIX_LINE
+import Constants.LABEL_PREFIX_LITERAL
 import models.OptimisationFlag
 import models.SourceLine
+import models.SourceLineWithNumber
 
 class Optimiser(
     private val optimisationFlags: List<OptimisationFlag>
 ) {
 
-    fun execute(normalSource: List<SourceLine>, frequentSource: List<SourceLine>): List<SourceLine> {
-
-        val source = if (frequentSource.isEmpty()) {
-
-            //No frequently called sections are specified
-            normalSource
-
-        } else {
-
-            //There are lines marked as frequently called, put this in front of all
-            //other lines and jump over.
-            listOf(
-                SourceLine(content = "goto $FREQUENT_SECTIONS_SKIP_LABEL")
-            ) + frequentSource + listOf(
-                SourceLine(content = FREQUENT_SECTIONS_SKIP_LABEL)
-            ) + normalSource
-        }
-
-        return source.removeRemCommands()
+    fun execute(source: List<SourceLine>): List<SourceLine> =
+        source.removeRemCommands()
             .removeGotoAfterThenOrElse()
             .joinLines()
-    }
 
-    fun optimiseWhiteSpace(lineContent: String): String {
+    fun optimiseWhiteSpace(source: List<SourceLineWithNumber>): List<SourceLineWithNumber> {
         //Is white-space optimisation enabled?
         if (!optimisationFlags.contains(OptimisationFlag.REMOVE_WHITE_SPACE)) {
             //Not enabled, don't change the line
-            return lineContent
+            return source
         }
 
-        //Is there a REM command in the line? If yes then stop processing white space there.
-        //Note: this lookup is a bit naive, doesn't parse the BASIC line
-        val endOfLine = lineContent.indexOf("rem")
-            .takeIf { it != -1 } ?: lineContent.length
+        return source.map { line ->
 
-        val result = StringBuilder()
-        var inString = false
+            val lineContent = line.sourceLine.content
 
-        //Walk through the line until the end (or until REM command)
-        for (index in (0 until endOfLine)) {
-            val char = lineContent[index]
+            //Is there a REM command in the line? If yes then stop processing white space there.
+            //Note: this lookup is a bit naive, doesn't parse the BASIC line
+            val endOfLine = lineContent.indexOf("rem")
+                .takeIf { it != -1 } ?: lineContent.length
 
-            //When double quotes found then turn in-string mode on/off
-            if (char == '"') {
-                inString = !inString
+            val result = StringBuilder()
+            var inString = false
+
+            //Walk through the line until the end (or until REM command)
+            for (index in (0 until endOfLine)) {
+                val char = lineContent[index]
+
+                //When double quotes found then turn in-string mode on/off
+                if (char == '"') {
+                    inString = !inString
+                }
+
+                //When this is not a white space, or it is inside a string then
+                //output to result.
+                if (!char.isWhitespace() || inString) {
+                    result.append(char)
+                }
             }
 
-            //When this is not a white space, or it is inside a string then
-            //output to result.
-            if (!char.isWhitespace() || inString) {
-                result.append(char)
+            //Copy any remaining string when REM command found earlier
+            if (endOfLine < lineContent.length) {
+                result.append(lineContent.substring(endOfLine))
             }
-        }
 
-        //Copy any remaining string when REM command found earlier
-        if (endOfLine < lineContent.length) {
-            result.append(lineContent.substring(endOfLine))
+            line.copy(sourceLine = line.sourceLine.copy(content = result.toString()))
         }
-
-        return result.toString()
     }
 
     private fun List<SourceLine>.removeRemCommands(): List<SourceLine> {
@@ -205,8 +193,6 @@ class Optimiser(
 
     companion object {
         private const val MAX_BASIC_SOURCE_LINE_LENGTH = 256
-
-        private const val FREQUENT_SECTIONS_SKIP_LABEL = "{#preic_skip_frequent_sections}"
 
         private val JOIN_LINE_SPECIAL_COMMANDS = listOf("goto", "go to", "if", "then", "return", "rem", "end")
         private val JOIN_LINE_STARTS_WITH_REGEX = Regex("^(\\{[$LABEL_PREFIX_LINE|$LABEL_PREFIX_LITERAL]+|[0-9]+).*")

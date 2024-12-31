@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.0] - unreleased
 
+### Changed
+
+- Literal labels are ordered by name instead of value in label list dump.
+
 ### Fixed
 
 - Missing file and line info from pre-processing directive error.
 - Line joining when previous line finished with an `END` command.
+- Changed order of source processing steps. Previous version completed code optimisation before pre-processing and
+  produced less optimal code. In this version pre-processing is completed before optimisation then line number
+  assignment. This way line joining and other optimisations are producing better outcome.
 
 ## [1.2.1] - 2024-12-29
 

@@ -1,17 +1,16 @@
-import models.CommandLineParameter
-import models.OptimisationFlag
-import models.ProcessingFlag
-import models.ProcessingParameters
+import models.*
 import java.io.PrintStream
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
 
     try {
+        val labels = mutableMapOf<String, Label>()
+
         val parameters = getCommandLineParameters(args)
 
-        val optimiser = Optimiser(parameters.optimisationFlags)
-        val preProcessor = PreProcessor(optimiser, parameters.processingFlags)
+        //Output goes to the specified output file, if not specified then standard output
+        val outputFile: PrintStream = parameters.outputFileName?.let { PrintStream(it) } ?: System.out
 
         //Read source file together with included files and
         //trim white space from beginning and end of lines.
@@ -21,17 +20,24 @@ fun main(args: Array<String>) {
             preprocessingFlags = parameters.preProcessingFlags,
         ).execute()
 
-        //Execute optimisations
-        val optimisedSource = optimiser.execute(normalSource, frequentSource)
+        //Pre-process combined normal and frequent source
+        val preProcessedSource = PreProcessor(labels, parameters.processingFlags).execute(normalSource, frequentSource)
 
-        //Output goes to the specified output file, if not specified then standard output
-        val outputFile: PrintStream = parameters.outputFileName?.let { PrintStream(it) } ?: System.out
+        //Execute optimisations on pre-processed source
+        val optimiser = Optimiser(parameters.optimisationFlags)
+        val optimisedSource = optimiser.execute(preProcessedSource)
 
-        //Pre-process and output processed source
-        preProcessor.execute(outputFile, optimisedSource)
+        //Assign BASIC line numbers to source lines
+        val numberedSource = LineNumberAssigner(labels).execute(optimisedSource)
 
-        //Print labels to file when requested
-        parameters.labelFileName?.let { preProcessor.printLabels(PrintStream(it)) }
+        //Optimise white space after all processing is done
+        val finalisedSource = optimiser.optimiseWhiteSpace(numberedSource)
+
+        //Write source to output
+        SourceWriter(outputFile).execute(finalisedSource)
+
+        //Dump labels to file when requested
+        LabelWriter(labels, parameters.labelFileName).execute()
 
     } catch (e: Exception) {
         println("\nERROR: $e")
