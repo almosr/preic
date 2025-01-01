@@ -148,10 +148,9 @@ class Optimiser(
 
             //Does this line start with label?
             if (line.content.matches(JOIN_LINE_STARTS_WITH_REGEX)) {
-                //Not safe to join, dump accumulated content and skip this line
+                //Not safe to join, dump accumulated content and replace it with this line
                 currentLine?.let { output.add(it) }
-                currentLine = null
-                output.add(line)
+                currentLine = line
                 return@forEach
             }
 
