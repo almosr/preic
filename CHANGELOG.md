@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.0] - unreleased
 
+### Added
+
+- Optimisation `i` for simplifying `IF` statements when a variable is checked against non-null value that can be reduced
+  to the variable itself. (Thanks to Valentino "SVS" Zenari for the idea.)
+
 ### Changed
 
 - Literal labels are ordered by name instead of value in label list dump.

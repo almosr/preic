@@ -12,6 +12,7 @@ class Optimiser(
     fun execute(source: List<SourceLine>): List<SourceLine> =
         source.removeRemCommands()
             .removeGotoAfterThenOrElse()
+            .simplifyNonZeroInIf()
             .joinLines()
 
     fun optimiseWhiteSpace(source: List<SourceLineWithNumber>): List<SourceLineWithNumber> {
@@ -101,32 +102,30 @@ class Optimiser(
             return this
         }
 
-        return map { line ->
-            val content = StringBuilder(line.content)
+        return REMOVE_GOTO_COMMANDS_AFTER_THEN_OR_ELSE_REGEX.processAllItems(this) { content, item ->
+            //Remove this instance from line content
+            content.replace(
+                //Keep THEN/ELSE at the beginning of removed range
+                item.range.first + 4,
+                item.range.last + 1,
+                ""
+            )
+        }
+    }
 
-            //Try to find `GOTO` and `GO TO` commands when those come directly after THEN or ELSE command,
-            //allow whitespace characters only in between.
-            REMOVE_GOTO_COMMANDS_AFTER_THEN_OR_ELSE_REGEX.findAll(content)
-                .toList()
-                //Go backwards, so we can remove anything from the
-                //line content without changing the ranges for the next item
-                .reversed()
-                .forEach { gotoCommand ->
+    private fun List<SourceLine>.simplifyNonZeroInIf(): List<SourceLine> {
+        if (!optimisationFlags.contains(OptimisationFlag.SIMPLIFY_VARIABLE_CHECK_IN_IF)) {
+            //Simplify if optim is off, return original source without any change
+            return this
+        }
 
-                    //Is GOTO inside a string literal or after REM command?
-                    val lineStart = content.substring(0, gotoCommand.range.first)
-                    if (!lineStart.isInsideDoubleQuotes() && !lineStart.contains("rem")) {
-                        //No, Remove this instance from line content
-                        content.replace(
-                            //Keep THEN/ELSE at the beginning of removed range
-                            gotoCommand.range.first + 4,
-                            gotoCommand.range.last + 1,
-                            ""
-                        )
-                    }
-                }
-
-            line.copy(content = content.toString())
+        return SIMPLIFY_NON_ZERO_IN_IF_REGEX.processAllItems(this) { content, item ->
+            //Replace "if variable<>0 then" with "if variable then"
+            content.replace(
+                item.range.first,
+                item.range.last + 1,
+                "if ${item.groupValues[1]} then"
+            )
         }
     }
 
@@ -187,6 +186,30 @@ class Optimiser(
         return output
     }
 
+    //Process each instance of an item that is found by using a Regex expression in all lines.
+    private fun Regex.processAllItems(
+        lines: List<SourceLine>,
+        processItem: (content: StringBuilder, item: MatchResult) -> Unit
+    ): List<SourceLine> = lines.map { line ->
+        val content = StringBuilder(line.content)
+
+        findAll(content)
+            .toList()
+            //Go backwards, so we can remove anything from the
+            //line content without changing the ranges for the next item
+            .reversed()
+            .forEach { item ->
+
+                //Is the item inside a string literal or after REM command?
+                val lineStart = content.substring(0, item.range.first)
+                if (!lineStart.isInsideDoubleQuotes() && !lineStart.contains("rem")) {
+                    processItem(content, item)
+                }
+            }
+
+        line.copy(content = content.toString())
+    }
+
     //Count the number of double quotes in the provided line fragment,
     //if not even number then one is left open before the rest of the line.
     private fun String.isInsideDoubleQuotes() = count { it == '"' } % 2 != 0
@@ -201,6 +224,7 @@ class Optimiser(
         private val REMOVE_REM_COMMANDS_REGEX = Regex("(^[0-9]*rem|[\\s:]rem)")
         private val REMOVE_GOTO_COMMANDS_AFTER_THEN_OR_ELSE_REGEX = Regex("(then|else)\\s*(go\\s*to)")
 
+        private val SIMPLIFY_NON_ZERO_IN_IF_REGEX = Regex("if\\s*([a-z][a-z0-9]??)\\s*<\\s*>\\s*0\\s*then")
     }
 
 }

@@ -29,6 +29,11 @@ data class ProcessingParameters(
  */
 enum class OptimisationFlag(val commandLineFlag: Char, val description: String) {
 
+    SIMPLIFY_VARIABLE_CHECK_IN_IF(
+        'i',
+        "Simplify variable comparison against non-zero in IF statement to the variable itself."
+    ),
+
     JOIN_LINES(
         'j',
         "Join BASIC lines, when set then processing attempts to join as many lines as safely possible. "
@@ -102,7 +107,7 @@ enum class CommandLineParameter(val commandLineFlag: String, val additionalParam
         "<processing flags>",
         "optional processing flags, when set then relevant processing will be completed on the output:\n" +
                 ProcessingFlag.entries.joinToString("\n") {
-                    "  * `${it.commandLineFlag} - ${it.description}"
+                    "  * `${it.commandLineFlag}` - ${it.description}"
                 }
     ),
 
@@ -111,7 +116,7 @@ enum class CommandLineParameter(val commandLineFlag: String, val additionalParam
         "<opt flags>",
         "optional optimisation flags, when set then the relevant processing will be completed on the output:\n" +
                 OptimisationFlag.entries.joinToString("\n") {
-                    "  * `${it.commandLineFlag} - ${it.description}"
+                    "  * `${it.commandLineFlag}` - ${it.description}"
                 } +
                 "\n  _Warning_: since the tool does not interpret the source, optimisations could cause runtime issues with some specific source code."
     )

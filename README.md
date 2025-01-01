@@ -153,6 +153,8 @@ Parameters are:
       variable names.
 
 - `-o <optim flags>` - optional optimisation flags, when set then relevant processing will be completed on the output:
+    * `i` - Simplify variable comparison against non-zero in IF statement to the variable itself. This optimisation is
+      applied to simple variable checks only without any arithmetics inside the `IF` statement.
     * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
       fewer lines make the program run faster.
     * `r` - remove `REM` BASIC commands from source to make it run faster and occupy less memory.
