@@ -54,16 +54,16 @@ This simple tool addresses the following limitations of Commodore BASIC:
 Keep mind, that you still have to code according to BASIC rules. Apart from formatting the source code everything else
 remains the same: commands, limitations, memory usage, execution flow handling, etc...
 
-Here is an example of a processed BASIC source (partial):
+Here is an example of a processed BASIC source (partial with all optimisations turned on):
 
 ```
 ...
-20 ifbo=0thengoto23
-21 ifpeek(bo)<>32thensc=sc+1:fp=fp-1:iffp=0thengoto29
-22 pokebo,83:pokebo-40,32:pokebp,gi:bo=bo+40:bp=bp+40:ifbo-sd>1000thenpokebo-40,32:bo=0
-23 fo=fo-1:iffo<>0thengoto25
-24 fo=fi:fk=fk+1:fl=fl+1:ifpeek(fk+2)=160thengoto28
-25 getke$:ifke$<>" "orbo<>0thengoto27
+3 pokea+1,113:pokea+2,81:pokec+2,i:pokea-1,32:pokea-40,32:ifd=0then6
+4 ifpeek(d)<>32thene=e+1:f=f-1:iff=0then28
+5 poked,83:poked-40,32:pokeg,j:d=d+40:g=g+40:ifd-h>1000thenpoked-40,32:d=0
+6 k=k-1:ifkthen8
+7 k=l:a=a+1:c=c+1:ifpeek(a+2)=160then27
+8 geta$:ifa$<>" "ord<>0then10
 ...
 ```
 
@@ -71,6 +71,14 @@ And here is the original source that was fed into pre-processing:
 
 ```
 ...
+poke {@fighter_pos_chars} + 1, {%gfx_fighter_body}
+poke {@fighter_pos_chars} + 2, {%gfx_fighter_head}
+
+poke {@!fighter_pos_colors} + 2, {@gfx_fighter_color}
+
+//Clear behind fighter
+poke {@fighter_pos_chars} - 1, {%gfx_clear}:poke {@fighter_pos_chars} - 40, {%gfx_clear}
+
 if {@bomb_pos_chars} = 0 then goto {#skip_bomb}
    //Else
 
