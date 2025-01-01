@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   produced less optimal code. In this version pre-processing is completed before optimisation then line number
   assignment. This way line joining and other optimisations are producing better outcome.
 - Line joining to also join following lines to a line with line label at the beginning.
+- Line joining to ignore strings in double quotes when assessing whether the line could be joined with others.
 
 ## [1.2.1] - 2024-12-29
 

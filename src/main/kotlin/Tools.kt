@@ -46,4 +46,20 @@ object Tools {
      */
     fun Regex.findAllValues(input: String) = findAll(input).map { it.groupValues[1] }.toList()
 
+    /**
+     * @return string without sub-strings that are inside double quotes (double quotes are removed also).
+     */
+    fun String.removeQuotedContent(): String {
+        val result = StringBuilder()
+        var insideString = false
+        forEach {
+            if (it == '\"') {
+                insideString = !insideString
+            } else {
+                if (!insideString) result.append(it)
+            }
+        }
+
+        return result.toString()
+    }
 }

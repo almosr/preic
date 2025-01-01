@@ -1,5 +1,6 @@
 import Constants.LABEL_PREFIX_LINE
 import Constants.LABEL_PREFIX_LITERAL
+import Tools.removeQuotedContent
 import models.OptimisationFlag
 import models.SourceLine
 import models.SourceLineWithNumber
@@ -159,7 +160,7 @@ class Optimiser(
             //or it contains special commands which can derail the execution.
             if (currentLine == null ||
                 currentContent.length > MAX_BASIC_SOURCE_LINE_LENGTH ||
-                JOIN_LINE_SPECIAL_COMMANDS.any { currentContent.contains(it) }
+                JOIN_LINE_SPECIAL_COMMANDS.any { currentContent.removeQuotedContent().contains(it) }
             ) {
                 //Close previous accumulated content and start a new one
                 currentLine?.let { output.add(it) }
