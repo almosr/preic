@@ -53,7 +53,10 @@ class SourceReader(
                                 if (skippedConditionalFlagCounter == 0) {
                                     //Otherwise flip when exist flag on the top item in the conditional flag stack
                                     val flag = conditionalFlags.removeLastOrNull()
-                                        ?: throw Exception("#else directive without matching #ifdef")
+                                        ?: throw SourceReadException(
+                                            "#else directive without matching #ifdef",
+                                            file, lineNumber, line
+                                        )
 
                                     conditionalFlags.add(flag.copy(whenPresent = false))
                                 }
@@ -68,7 +71,10 @@ class SourceReader(
                                 } else {
                                     //No skipped flags, remove it actual stack
                                     conditionalFlags.removeLastOrNull()
-                                        ?: throw Exception("#endif directive without matching #ifdef")
+                                        ?: throw SourceReadException(
+                                            "#endif directive without matching #ifdef",
+                                            file, lineNumber, line
+                                        )
                                 }
                                 emptyList()
                             }
@@ -105,13 +111,7 @@ class SourceReader(
                             }
 
                             //Process included file when line is not skipped
-                            line.startsWith("#include") -> {
-                                val includedFile = getDirectiveParameter(line, file, lineNumber)
-                                val (includedSrc, includedFreqSrc) = readSource(includedFile, flags)
-                                frequentSource.addAll(includedFreqSrc)
-
-                                includedSrc
-                            }
+                            line.startsWith("#include") -> includeFile(line, file, lineNumber, flags, frequentSource)
 
                             //Not a special line, add to source when line is not skipped
                             else -> {
@@ -128,11 +128,14 @@ class SourceReader(
 
             //At the end conditional flags stacks must be empty otherwise a condition was not matched
             if (conditionalFlags.isNotEmpty() || skippedConditionalFlagCounter > 0) {
-                throw Exception("Unfinished #ifdef-#endif pre-processing direction structure")
+                throw SourceReadException(
+                    "Unfinished #ifdef-#endif pre-processing direction structure",
+                    file, lineNumber, null
+                )
             }
 
             //Find any sections marked as frequently called and separate it
-            val normalSource = source.extractFrequentSections(frequentSource)
+            val normalSource = source.extractFrequentSections(frequentSource, file, lineNumber)
 
             return Pair(normalSource, frequentSource)
 
@@ -141,7 +144,200 @@ class SourceReader(
         }
     }
 
-    private fun List<SourceLine>.extractFrequentSections(frequentSource: MutableList<SourceLine>): List<SourceLine> {
+    private fun includeFile(
+        line: String,
+        file: File,
+        lineNumber: Int,
+        flags: MutableSet<String>,
+        frequentSource: MutableList<SourceLine>
+    ): List<SourceLine> {
+
+        val parameters = getDirectiveParameter(line, file, lineNumber)
+            //Split parameters by comma character
+            .split(',')
+            //Remove wrapping white space
+            .map { it.trim() }
+            .toMutableList()
+
+        //Last part is always the included file
+        val includedFile = parameters.removeLast()
+
+        //Do we have first parameter?
+        val method = if (parameters.isNotEmpty()) {
+            val type = parameters.removeFirst()
+            IncludeFileMethod.entries.firstOrNull { it.id == type }
+                ?: throw SourceReadException(
+                    "Unknown include directive file type: $type",
+                    file, lineNumber, line
+                )
+        } else {
+            //Code is the default
+            IncludeFileMethod.CODE
+        }
+
+        //Do we have start offset parameter?
+        val startOffset = parameters.getOffsetOrNull(file, lineNumber, line)
+
+        //Do we have end offset parameter?
+        val endOffset = parameters.getOffsetOrNull(file, lineNumber, line)
+
+        //Any further parameter is unrecognised
+        if (parameters.isNotEmpty()) {
+            throw SourceReadException(
+                "Unrecognised include directive parameters: ${parameters.joinToString(",")}",
+                file, lineNumber, line
+            )
+        }
+
+        return when (method) {
+            IncludeFileMethod.CODE -> {
+                if (startOffset != null) {
+                    throw SourceReadException(
+                        "Code include does not support offset parameters",
+                        file, lineNumber, line
+                    )
+                }
+                val (includedSrc, includedFreqSrc) = readSource(includedFile, flags)
+                frequentSource.addAll(includedFreqSrc)
+
+                includedSrc
+            }
+
+            IncludeFileMethod.DATA -> {
+                readBinaryFile(includedFile, startOffset, endOffset, file, lineNumber, line)
+                    .chunked(MAX_BYTE_IN_DATA)
+                    .map {
+                        SourceLine(file, content = "data ${it.joinToString(",")}")
+                    }
+            }
+
+            IncludeFileMethod.PRINT -> {
+                readBinaryFile(
+                    includedFile, startOffset, endOffset,
+                    file, lineNumber, line
+                ).chunked(128)
+                    .map { chunk ->
+
+                        //Flag for inverse print mode on/off
+                        var inverse = false
+                        val printedChunk = chunk.map {
+                            when {
+                                //When byte is higher or equal to 128 and inverse mode is off then turn it on
+                                it >= 128.toUByte() && !inverse -> {
+                                    inverse = true
+                                    "{rvon}" + PRINTED_BYTE[it.toInt() and 127]
+                                }
+
+                                //When byte is higher or equal to 128 and inverse mode is on then keep it on
+                                it >= 128.toUByte() -> {
+                                    PRINTED_BYTE[it.toInt() and 127]
+                                }
+
+                                //Byte is lower than 128 and inverse mode is on, turn it off
+                                inverse -> {
+                                    inverse = false
+                                    "{rvof}" + PRINTED_BYTE[it.toInt()]
+                                }
+
+                                //Otherwise byte is lower than 128 and inverse mode is off then keep it off
+                                else -> PRINTED_BYTE[it.toInt()]
+                            }
+                        }
+
+                        SourceLine(
+                            file, content = "print\"" +
+                                    printedChunk.joinToString("") +
+                                    //If inverse mode remained on at the end then turn it off
+                                    ("{rvof}".takeIf { inverse } ?: "") +
+                                    "\";"
+                        )
+                    }
+            }
+
+            IncludeFileMethod.REMARK -> {
+                val binaryFile = readBinaryFile(
+                    includedFile, startOffset, endOffset,
+                    file, lineNumber, line
+                )
+
+                //Zero bytes in REM lines are not working
+                if (binaryFile.any { it == 0.toUByte() }) {
+                    throw SourceReadException(
+                        "Included binary file contains zero bytes that cause issues with BASIC REM command, use print method instead",
+                        file, lineNumber, line
+                    )
+                }
+
+                binaryFile.chunked(256)
+                    .map { chunk ->
+                        SourceLine(
+                            file,
+                            content = "rem\"" +
+                                    chunk.joinToString("") { "{\$${"%02x".format(it.toByte())}}" }
+                        )
+                    }
+            }
+        }
+    }
+
+    private fun MutableList<String>.getOffsetOrNull(file: File, lineNumber: Int, line: String) =
+        removeFirstOrNull()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                try {
+                    //Convert the string to integer
+                    it.toInt()
+                } catch (e: Exception) {
+                    throw SourceReadException(
+                        "Failed to parse include file start offset",
+                        file, lineNumber, line
+                    )
+                }
+            }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    private fun readBinaryFile(
+        fileName: String,
+        startOffset: Int?,
+        endOffset: Int?,
+        file: File,
+        lineNumber: Int,
+        line: String?
+    ): List<UByte> =
+        try {
+            //Create the File instance from file name, or when it doesn't exist then also search the library dir
+            findFile(fileName)
+                .readBytes()
+                .toUByteArray()
+                .run {
+                    val finalStartOffset = startOffset ?: 0
+                    val finalEndOffset = endOffset ?: (indices.last + 1)
+
+                    if (finalStartOffset !in (0..indices.last)) {
+                        throw SourceReadException(
+                            "Invalid start offset for include directive: $finalStartOffset, must be in range (0 .. ${indices.last})",
+                            file, lineNumber, line
+                        )
+                    }
+
+                    if (finalEndOffset !in (finalStartOffset + 1..indices.last + 1)) {
+                        throw SourceReadException(
+                            "Invalid end offset for include directive: $finalEndOffset, must be in range (${finalStartOffset + 1} .. ${indices.last + 1})",
+                            file, lineNumber, line
+                        )
+                    }
+
+                    slice(finalStartOffset until finalEndOffset)
+                }
+        } catch (e: Exception) {
+            throw Exception("Failed to read binary file: $fileName", e)
+        }
+
+    private fun List<SourceLine>.extractFrequentSections(
+        frequentSource: MutableList<SourceLine>,
+        file: File,
+        lineNumber: Int
+    ): List<SourceLine> {
         var frequentMode = false
         val normalSource = mapNotNull { line ->
 
@@ -150,7 +346,7 @@ class SourceReader(
                 //Start of frequently called section
                 line.content.startsWith("#frequent") -> {
                     if (frequentMode) {
-                        throw Exception("Section already marked as frequent\n$line")
+                        throw SourceReadException("Section already marked as frequent", file, lineNumber, line.content)
                     }
                     frequentMode = true
 
@@ -160,7 +356,7 @@ class SourceReader(
                 //End of frequently called section
                 line.content.startsWith("#endfrequent") -> {
                     if (!frequentMode) {
-                        throw Exception("Missing #frequent directive\n$line")
+                        throw SourceReadException("Missing #frequent directive", file, lineNumber, line.content)
                     }
                     frequentMode = false
 
@@ -180,7 +376,7 @@ class SourceReader(
         }
 
         if (frequentMode) {
-            throw Exception("#frequent directive was not closed in file ${this[0].file?.absolutePath}")
+            throw SourceReadException("#frequent directive was not closed", file, lineNumber, null)
         }
 
         return normalSource
@@ -189,7 +385,7 @@ class SourceReader(
     private fun getDirectiveParameter(line: String, file: File, lineNumber: Int): String {
         val start = line.indexOfFirst { it == ' ' }
         if (start == -1) {
-            throw Exception("Parameter is missing for pre-processing directive\n${file.absolutePath}:$lineNumber\n\"$line\"")
+            throw SourceReadException("Parameter is missing for pre-processing directive", file, lineNumber, line)
         }
 
         return line.substring(start + 1).trim()
@@ -217,4 +413,174 @@ class SourceReader(
      *                    otherwise flag must not be present in the set to keep the lines.
      */
     private data class ConditionalFlag(val name: String, val whenPresent: Boolean)
+
+    /**
+     * File inclusion method.
+     *
+     * @param id ID of the method for parsing `#include` directive parameters.
+     */
+    private enum class IncludeFileMethod(val id: String) {
+        CODE("code"),
+        DATA("data"),
+        PRINT("print"),
+        REMARK("remark"),
+    }
+
+    private class SourceReadException(message: String, file: File, lineNumber: Int, line: String?) : Exception(
+        "$message\n" +
+                "${file.absolutePath}:$lineNumber\n" +
+                ("\"$line\"".takeIf { line != null } ?: "")
+    )
+
+    companion object {
+
+        //Maximum number of bytes turned into one DATA line from a binary file
+        private const val MAX_BYTE_IN_DATA = 150
+
+        //Printed form of each screen character between 0 and 127 ($7F),
+        //the same characters are repeated between 128 ($80) and 255 ($FF) in inverse,
+        //so no need to store those in this list.
+        private val PRINTED_BYTE = listOf(
+            "@", //00
+            "a", //01
+            "b", //02
+            "c", //03
+            "d", //04
+            "e", //05
+            "f", //06
+            "g", //07
+            "h", //08
+            "i", //09
+            "j", //0A
+            "k", //0B
+            "l", //0C
+            "m", //0D
+            "n", //0E
+            "o", //0F
+
+            "p", //10
+            "q", //11
+            "r", //12
+            "s", //13
+            "t", //14
+            "u", //15
+            "v", //16
+            "w", //17
+            "x", //18
+            "y", //19
+            "z", //1A
+            "[", //1B
+            "\\", //1C
+            "]", //1D
+            "^", //1E
+            "_", //1F
+
+            " ", //20
+            "!", //21
+
+            //printing double quote triggers the quoting mode,
+            //so we close it with another one and backspace
+            //to remove the second one
+            "\";chr\$(34);chr\$(34);\"{del}", //22
+
+            "#", //23
+            "$", //24
+            "%", //25
+            "&", //26
+            "'", //27
+            "(", //28
+            ")", //29
+            "*", //2A
+            "+", //2B
+            ",", //2C
+            "-", //2D
+            ".", //2E
+            "/", //2F
+
+            "0", //30
+            "1", //31
+            "2", //32
+            "3", //33
+            "4", //34
+            "5", //35
+            "6", //36
+            "7", //37
+            "8", //38
+            "9", //39
+            ":", //3A
+            ";", //3B
+            "<", //3C
+            "=", //3D
+            ">", //3E
+            "?", //3F
+
+            "{SHIFT-*}", //40
+            "A", //41
+            "B", //42
+            "C", //43
+            "D", //44
+            "E", //45
+            "F", //46
+            "G", //47
+            "H", //48
+            "I", //49
+            "J", //4A
+            "K", //4B
+            "L", //4C
+            "M", //4D
+            "N", //4E
+            "O", //4F
+
+            "P", //50
+            "Q", //51
+            "R", //52
+            "S", //53
+            "T", //54
+            "U", //55
+            "V", //56
+            "W", //57
+            "X", //58
+            "Y", //59
+            "Z", //5A
+            "{SHIFT-+}", //5B
+            "{CBM--}", //5C
+            "{SHIFT--}", //5D
+            "~", //5E
+            "{CBM-*}", //5F
+
+            "{\$a0}", //60
+            "{CBM-K}", //61
+            "{CBM-I}", //62
+            "{CBM-T}", //63
+            "{CBM-@}", //64
+            "{CBM-G}", //65
+            "{CBM-+}", //66
+            "{CBM-M}", //67
+            "{CBM-POUND}", //68
+            "{SHIFT-POUND}", //69
+            "{CBM-N}", //6A
+            "{CBM-Q}", //6B
+            "{CBM-D}", //6C
+            "{CBM-Z}", //6D
+            "{CBM-S}", //6E
+            "{CBM-P}", //6F
+
+            "{CBM-A}", //70
+            "{CBM-E}", //71
+            "{CBM-R}", //72
+            "{CBM-W}", //73
+            "{CBM-H}", //74
+            "{CBM-J}", //75
+            "{CBM-L}", //76
+            "{CBM-Y}", //77
+            "{CBM-U}", //78
+            "{CBM-O}", //79
+            "{SHIFT-@}", //7A
+            "{CBM-F}", //7B
+            "{CBM-C}", //7C
+            "{CBM-X}", //7D
+            "{CBM-V}", //7E
+            "{CBM-B}", //7F
+        )
+    }
 }

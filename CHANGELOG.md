@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.0] - unreleased
 
+### Added
+
+- Parameters `code`, `data`, `remark` and `print` to `#include` directive for reading binary files and converting them
+  into source code.
+
+### Fixed
+
+- Missing file and line info from source reading error.
+
 ## [1.3.0] - 2025-01-01
 
 ### Added

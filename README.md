@@ -27,7 +27,7 @@ code out of more flexible input files. And that is how the idea of `preic` was b
 Why would anybody need this tool? I am not quite sure, to be honest. It might come handy when you want to participate in
 some retro BASIC competition.
 
-### Tool features
+## Tool features
 
 This simple tool addresses the following limitations of Commodore BASIC:
 
@@ -444,13 +444,13 @@ When literal labels are referring to each other than it is possible to end up wi
 processes the same line more than 100 times and still not finished with the labels then it throws an error because most
 likely the labels are replacing each other in an infinite recursion.
 
-### Controlling file pre-processing
+## Controlling file pre-processing
 
 More sophisticated projects require specific rules that fine-control the included source code files. Modern compilers
 offer a number of features, like conditional compiling which help setting up a well-defined project structure that is
 producing a number of outputs reliably without source code changes.
 
-#### Including files
+### Including files
 
 Nobody likes looking at long source code, it is hard to understand and maintain. Breaking up the source code into
 smaller chunks that are implementing one specific function makes it easier to code.
@@ -460,13 +460,72 @@ tool into your hands. It can be utilised for building routine or constant librar
 multiple source code.
 
 If you want to include any source code then use the `#include` directive in a separate line followed by the relative or
-absolute path of the target file. The file will be processed as it would be part of the including source code.
+absolute path of the target file after space character. The file will be processed as it would be part of the including
+source code.
 
 It is possible to use the include directive in an included file, there are no limits how deep you would go in the rabbit
 hole. There is also no check for recursion, so be careful not to include the already included file again directly or
 indirectly.
 
-#### Conditional processing
+The `#include` directive can be used for injecting binary data into the source code also, the complete form of the
+directive is:
+
+```
+#include [[code|data|remark|print],][start offset,[end offset,]<path to the file>
+```
+
+First optional parameter specifies the format of the included file:
+
+* `code` - include the file as source code (text) file;
+* `data` - include the file as binary and turn the bytes into `DATA` lines;
+* `remark` - include the file as binary and turn the bytes into raw data in memory as part of the source code after a
+  `REM` BASIC command.
+* `print` - include the file as binary and turn the bytes into `PRINT` BASIC commands that can be used to print the
+  binary to the screen memory.
+
+When this parameter is not specified then the default will be `code`.
+
+When second and third optional parameters are specified then these are used as start and end offset inside the file.
+Anything before the start offset and from the end offset will be thrown away, so it is possible to include only a
+specific part of the file. In case only the end offset is needed either set start offset to 0 or just use an empty start
+offset with a comma character. Start offset must be in range _0 to size of the file - 1_, end offset must be in
+range _start offset + 1 to size of the file_.
+
+When `code` format is specified then offset parameters cannot be used.
+
+Last parameter is path to the included file, the rest of the line will be interpreted as path, white space at the
+beginning and end will be ignored. **Note**: the path must not contain comma (`,`) characters. Make sure you don't try
+to include a huge binary, it must fit into the available memory on the target machine and there are no checks built into
+the tool for that.
+
+The `remark` and `print` formats need some further explanation: these can be used to store the binary data in more
+dense format than `DATA` lines and manipulate them directly using machine code or ROM KERNAL functions. I leave it to
+your imagination how these formats could be utilised. See the [examples](#examples) for a simple demonstration.
+
+#### Binary as remark
+
+Using `remark` method binary data can be stored in the Commodore BASIC program after `REM` commands without any
+transformation. The `REM` command is followed by an opening double-quote to escape the data. Listing the program might
+not work properly because these bytes will be displayed as some garbled content. If you are able to locate the line in
+memory then you can use the start address of the binary data and process it further.
+
+Two limitations apply to this format:
+
+1. It cannot contain zero byte value because that breaks the BASIC line processing;
+2. Size of data in one BASIC line is maximised to 256 bytes, when the included binary is larger than that then it will
+   be broken up into multiple consecutive lines.
+
+##### Binary as printed data
+
+With `print` method binary data is stored using `PRINT` Commodore BASIC commands. In this form the data cannot be used
+immediately, it has to be printed to the screen and then accessed via screen memory to get back the original form.
+Storing the data this way is much less convenient than using `REM` commands, however it can also contain zero byte
+values.
+
+The only limitation to this format is the length of one chunk of data for each `PRINT` command: maximised to 128 bytes,
+when the included binary is larger than that then it will be broken up into multiple consecutive lines.
+
+### Conditional processing
 
 Conditional processing includes-excludes certain part of the source code depending on the existence of a specific
 pre-processing flag.
@@ -522,7 +581,7 @@ Finally, in some special circumstances you might want to remove an already defin
 use the `#undef` directive with the name of the flag and when this line is processed then from that point on the flag
 will be considered undefined.
 
-#### Move frequently called lines to the front
+### Move frequently called lines to the front
 
 Commodore BASIC does not maintain a list or hash of line addresses. When a program jumps to a line or calls a
 subroutine then the interpreter starts searching for the line number from the beginning of the program following the
@@ -581,7 +640,7 @@ Obviously, this example is not particularly useful, it is just a demonstration o
 Debugging a restructured program could be difficult. I would recommend marking specific lines with `REM` command that
 can be recognised in the restructured code and can be removed automatically by using `r` optimisation flag.
 
-### Debugging the processed code
+## Debugging the processed code
 
 Debugging your code after it was turned into actual BASIC program is not simple because the whole structure might change
 completely. You can find line numbers and variables associated with your labels in label list file. Use the `-l` command
