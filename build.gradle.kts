@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm") version "2.0.21"
 }
 
-version = "1.4.0"
+version = "1.5.0"
 
 repositories {
     mavenCentral()
