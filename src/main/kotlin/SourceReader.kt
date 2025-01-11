@@ -1,3 +1,4 @@
+import models.BasicFunction
 import models.SourceLine
 import java.io.File
 
@@ -7,8 +8,13 @@ class SourceReader(
     private val preprocessingFlags: Set<String>,
 ) {
 
+    private val functions = mutableMapOf<String, BasicFunction>()
+
     //Returns the normal source lines first then the lines marked as frequently called
-    fun execute() = readSource(inputFileName, preprocessingFlags.toMutableSet())
+    fun execute() = readSource(inputFileName, preprocessingFlags.toMutableSet()).let {
+        //Resolve function calls in both source code groups
+        it.first.resolveFunctionCalls() to it.second.resolveFunctionCalls()
+    }
 
     private fun readSource(fileName: String, flags: MutableSet<String>): Pair<List<SourceLine>, List<SourceLine>> {
 
@@ -113,6 +119,9 @@ class SourceReader(
                             //Process included file when line is not skipped
                             line.startsWith("#include") -> includeFile(line, file, lineNumber, flags, frequentSource)
 
+                            //Process function declaration when line is not skipped
+                            line.startsWith("#function") -> functionDeclaration(line, file, lineNumber)
+
                             //Not a special line, add to source when line is not skipped
                             else -> {
                                 listOf(
@@ -152,12 +161,7 @@ class SourceReader(
         frequentSource: MutableList<SourceLine>
     ): List<SourceLine> {
 
-        val parameters = getDirectiveParameter(line, file, lineNumber)
-            //Split parameters by comma character
-            .split(',')
-            //Remove wrapping white space
-            .map { it.trim() }
-            .toMutableList()
+        val parameters = getDirectiveParameterList(line, file, lineNumber)
 
         //Last part is always the included file
         val includedFile = parameters.removeLast()
@@ -280,6 +284,65 @@ class SourceReader(
         }
     }
 
+    private fun functionDeclaration(line: String, file: File, lineNumber: Int): List<SourceLine> {
+        val parameters = getDirectiveParameterList(line, file, lineNumber)
+
+        //Add function call
+        val name = parameters.removeFirst()
+        functions.putIfAbsent(
+            name,
+            BasicFunction(name, parameters)
+        )?.let {
+            //When this call returns a non-null value then this function name already used
+            throw SourceReadException("Function already declared with name `$name`", file, lineNumber, line)
+        }
+
+        return listOf(SourceLine(file, lineNumber, "{#$name}"))
+    }
+
+    private fun List<SourceLine>.resolveFunctionCalls(): List<SourceLine> =
+        map { line ->
+
+            //Try to find #call directive
+            if (!line.content.startsWith("#call")) {
+                //Not call directive, return original line
+                return@map listOf(line)
+            }
+
+            val parameters = getDirectiveParameterList(line.content, line.file!!, line.lineNumber)
+
+            //First parameter is the target function name
+            val functionName = parameters.removeFirst()
+
+            //Try to find the function
+            val function = functions[functionName]
+                ?: throw with(line) {
+                    SourceReadException(
+                        "Call directive without function definition, target function: `$functionName`",
+                        file!!, lineNumber, content
+                    )
+                }
+
+            //Parameter lists must match between function declaration and call
+            if (function.parameters.size != parameters.size) {
+                throw with(line) {
+                    SourceReadException(
+                        "Call directive parameter list doesn't match target function: ${
+                            function.parameters.joinToString(",")
+                        }",
+                        file!!, lineNumber, content
+                    )
+                }
+            }
+
+            //Initialise each parameter variable
+            parameters.mapIndexed { index, parameter ->
+                line.copy(content = "{@${function.parameters[index]}}=$parameter")
+            } +
+                    //Add call to subroutine with BASIC GOSUB command
+                    listOf(line.copy(content = "gosub {#${function.name}}"))
+        }.flatten()
+
     private fun MutableList<String>.getOffsetOrNull(file: File, lineNumber: Int, line: String) =
         removeFirstOrNull()
             ?.takeIf { it.isNotEmpty() }
@@ -391,6 +454,27 @@ class SourceReader(
         return line.substring(start + 1).trim()
     }
 
+    private fun getDirectiveParameterList(line: String, file: File, lineNumber: Int): MutableList<String> {
+        val input = getDirectiveParameter(line, file, lineNumber)
+
+        //Find all commas that are not inside quoting marks
+        val commas = COMMA_REGEX.findAll(input)
+
+        //Split up parameters by found comma positions
+        val result = mutableListOf<String>()
+        var index = 0
+        commas.forEach {
+            result.add(input.substring(index, it.range.first))
+            index = it.range.last + 1
+        }
+
+        //Add remaining line
+        result.add(input.substring(index, input.length))
+
+        //Trim white space around parameters and return parameter list as mutable
+        return result.map { it.trim() }.toMutableList()
+    }
+
     private fun findFile(fileName: String) =
 
         //When the file exists as it is referred by the file name then use it
@@ -433,6 +517,9 @@ class SourceReader(
     )
 
     companion object {
+
+        //Regex for matching all commas in a string that are not inside quoting marks
+        private val COMMA_REGEX = Regex(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*\$)")
 
         //Maximum number of bytes turned into one DATA line from a binary file
         private const val MAX_BYTE_IN_DATA = 150

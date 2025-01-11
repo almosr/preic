@@ -59,7 +59,7 @@ if {@machine} = 61 then {@machine} = {%machine_c128} : return
 //*** Parameters:
 //***   {@color_text} - color of printed text.
 //***
-{#set_text_color}
+#function set_text_color, color_text
 on {@color_text} goto {#set_text_color_black}, {#set_text_color_white}, {#set_text_color_red}, {#set_text_color_green}, {#set_text_color_blue}, {#set_text_color_orange}
 
 {#set_text_color_black}
@@ -102,7 +102,7 @@ return
 //*** Parameters:
 //***   {@color_background} - color of background and border.
 //***
-{#set_background_color}
+#function set_background_color, color_background
 on {@color_background} goto {#set_screen_bg_black}, {#set_screen_bg_white}, {#set_screen_bg_red}, {#set_screen_bg_green}, {#set_screen_bg_blue}, {#set_screen_bg_orange}
 return
 
@@ -154,7 +154,7 @@ return
 //***   {@color_text} - color of printed text.
 //***   {@color_background} - color of background and border.
 //***
-{#reset_screen}
+#function reset_screen, color_text, color_background
 gosub{#set_background_color}
 gosub{#set_text_color}
 print"{clr}";
@@ -174,7 +174,7 @@ return
 //*** Note: parameter variables will be set to 1, parameters are
 //***       not validated against expected range.
 //***
-{#set_cursor_position}
+#function set_cursor_position, cursor_x, cursor_y
 print"{home}";
 
 //This is really slow, but the only compatible way with BASIC v2
@@ -189,13 +189,13 @@ return
 //*** Prints a given text centered in a specific row.
 //***
 //*** Parameters:
-//***   {@text$} - text to print
 //***   {@cursor_y} - cursor vertical position (0-39)
+//***   {@text$} - text to print
 //***
 //*** Note: cursor_y is not validated against expected range.
 //***       Value of center_x and center_y variables will be set to 1.
 //***
-{#print_centered}
+#function print_centered, cursor_y, text$
 {@cursor_x}=20-len({@text$})/2
 gosub {#set_cursor_position}
 print {@text$};

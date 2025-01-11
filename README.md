@@ -581,6 +581,65 @@ Finally, in some special circumstances you might want to remove an already defin
 use the `#undef` directive with the name of the flag and when this line is processed then from that point on the flag
 will be considered undefined.
 
+### Functions with parameters
+
+One of the painful aspects of calling a subroutine in Commodore BASIC programs is passing parameters to the called
+routine. The only way to do this is by loading the passed data to specific variables that are expected by the
+subroutine. This means you have to remember (or look up) which variables should be used for each subroutine.
+
+To make calling a subroutine easier pre-processing offers you a directive pair that solves passing the parameters with
+some grace. To define a function use the `#function` directive and pass in the name (line label) of the subroutine and
+also the list of variables you would use for passing parameters. Format is the following:
+
+```
+#function <line name>[,<parameter1 name>][,<parameter2 name>]...
+```
+
+Where `line name` will be used to define a line label for the function. Optional parameter names are used as
+variable names for passing parameters to the function. (No need for `#` character for the line name or `@` character for
+the parameter variables.)
+The order of the parameters will be used when calling the method to assign values to the parameters. Line and parameter
+names must not contain comma (`,`) character. The function will be called as subroutine, so it must finish with `RETURN`
+command.
+
+After declaring the function you can call it from anywhere in your source code by using the `#call` directive:
+
+```
+#call <line name>[,<parameter1 value>][,<parameter 2 value>]...
+```
+
+This directive generates initialisation code for each parameter and then adds a `GOSUB` command with the target to
+the `line name` as line label.
+
+The number of parameters must match the function definition. Parameter values must not contain comma (`,`) character.
+
+An example for the function definition and calling:
+
+```
+{@stock}=42
+#call print_value "stock", {@stock}
+end
+
+#function print_value label$,value
+print {@label$};": ";{@value}
+return
+```
+
+Will be turned into this code:
+
+```
+0 st=42
+1 la$="stock"
+2 va=st
+4 gosub 6
+5 end
+6 print la$;": ";va
+return
+```
+
+In this example one of the parameter was a string literal that is loaded into a string variable, the other one was a
+numeric variable that is loaded to the parameter numeric variable.
+
 ### Move frequently called lines to the front
 
 Commodore BASIC does not maintain a list or hash of line addresses. When a program jumps to a line or calls a

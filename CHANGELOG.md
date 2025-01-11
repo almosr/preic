@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Parameters `code`, `data`, `remark` and `print` to `#include` directive for reading binary files and converting them
   into source code.
+- Pre-processing directives `#function` and `#call` for declaring and calling functions (subroutines) with parameters.
 
 ### Fixed
 

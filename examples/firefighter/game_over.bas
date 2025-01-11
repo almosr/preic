@@ -10,29 +10,18 @@
 //********************************
 {#game_over}
 //Set up screen: background is black, text is red then clear screen
-{@color_background}={%color_black}
-{@color_text}={%color_red}
-gosub{#reset_screen}
+#call reset_screen, {%color_red}, {%color_black}
 
 //Print header
-{@cursor_y}=4
-{@text$}="game over"
-gosub{#print_centered}
+#call print_centered, 4, "game over"
 
 //Print score
-{@color_text}={%color_white}
-gosub{#set_text_color}
-{@cursor_y}=8
-{@text$}="your score:"+str$({@score})
-gosub{#print_centered}
-
+#call set_text_color, {%color_white}
+#call print_centered, 8, "your score:" + str$({@score})
 
 //Wait for key press
-{@color_text}={%color_blue}
-gosub{#set_text_color}
-{@cursor_y}=24
-{@text$}="press space"
-gosub{#print_centered}
+#call set_text_color, {%color_blue}
+#call print_centered, 24, "press space"
 
 gosub{#wait_for_space_key}
 

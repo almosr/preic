@@ -10,9 +10,7 @@
 //********************************
 {#intro}
 //Set up screen: background is red, text is orange then clear screen
-{@color_background}={%color_black}
-{@color_text}={%color_red}
-gosub{#reset_screen}
+#call reset_screen, {%color_red}, {%color_black}
 
 //Firefighter logo
 print"         {CBM-A}{SHIFT-*}{CBM-R}{CBM-R}{SHIFT-*}{CBM-R}{SHIFT-*}{CBM-R}{SHIFT-*}{CBM-R}{CBM-R}{SHIFT-*}{CBM-R}{CBM-R}{CBM-R}{SHIFT-*}{CBM-R}{SHIFT-*}{CBM-R}{SHIFT-*}{CBM-S}"
@@ -20,23 +18,15 @@ print"         {SHIFT--}{SHIFT-*}{CBM-W}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT-*}{CBM
 print"         {SHIFT--}{CBM-A}{CBM-W}{SHIFT--} {CBM-W} {SHIFT--}{CBM-A}{CBM-W}{SHIFT--}{CBM-Z}{CBM-W} {SHIFT--}{SHIFT--}{SHIFT--} {SHIFT--} {CBM-W}"
 
 //Lower half of the logo is in a different color
-
-{@color_text}={%color_orange}
-gosub{#set_text_color}
+#call set_text_color, {%color_orange}
 
 print"         {SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT-*}{CBM-W}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT--}{SHIFT-*}{CBM-W}{SHIFT--}{SHIFT--}"
 print"         {CBM-Z}{CBM-X}{CBM-Z}{CBM-E}{CBM-E}{CBM-E}{SHIFT-*}{CBM-E}{CBM-X}{CBM-Z}{CBM-E}{SHIFT-*}{CBM-E}{CBM-E}{CBM-X}{CBM-Z}{CBM-E}{SHIFT-*}{CBM-E}{CBM-E}{CBM-X}"
 
-{@color_text}={%color_white}
-gosub{#set_text_color}
+#call set_text_color, {%color_white}
 
-{@text$}="example game for preic tool"
-{@cursor_y}=7
-gosub{#print_centered}
-
-{@text$}="instructions:"
-{@cursor_y}=10
-gosub{#print_centered}
+#call print_centered, 7, "example game for preic tool"
+#call print_centered, 10, "instructions:"
 
 print"{down}"
 print"put out the fire by water bombing it"
@@ -47,11 +37,8 @@ print"before dropping another."
 print"{down}when you finish with the fire then your"
 print"helicopter gains a little speed for the next fire."
 
-{@color_text}={%color_red}
-gosub{#set_text_color}
+#call set_text_color, {%color_red}
 
-{@text$}="press space to start"
-{@cursor_y}=24
-gosub{#print_centered}
+#call print_centered, 24, "press space to start"
 
 gosub{#wait_for_space_key}

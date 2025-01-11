@@ -29,9 +29,7 @@
 
 //Set up screen: background is black, text is white then clear screen
 //Score is displayed at the top-left corner.
-{@color_background} = {%color_black}
-{@color_text} = {%color_white}
-gosub {#reset_screen}
+#call reset_screen, {%color_white}, {%color_black}
 print"score:"
 gosub {#print_score}
 
@@ -151,24 +149,15 @@ goto {#loop}
 
 {#collision}
 
-{@anim_text$} = "you are burning!!!11"
-{@anim_bg_color_1} = {%color_black}
-{@anim_bg_color_2} = {%color_red}
-gosub {#animate_text}
-
+#call animate_text, "you are burning!!!11", {%color_black}, {%color_red}
 goto {#game_over}
-
 
 {#win}
 
 //Remove bomb and last piece of fire
 poke {@bomb_pos_chars}, {%gfx_clear}
 poke {@bomb_pos_chars} - 40, {%gfx_clear}
-
-{@anim_text$} = "fire is gone, next level"
-{@anim_bg_color_1} = {%color_black}
-{@anim_bg_color_2} = {%color_green}
-gosub {#animate_text}
+#call animate_text, "fire is gone, next level", {%color_black}, {%color_green}
 
 if {@fighter_speed} > 1 then {@fighter_speed} = {@fighter_speed} - 1
 goto {#next_level}
@@ -189,9 +178,9 @@ goto {#next_level}
 //*** {@anim_text$} - text to print
 //*** {@anim_bg_color_1}, {@anim_bg_color_2} - alternating background colors
 //***
-{#animate_text}
+#function animate_text, anim_text$, anim_bg_color_1, anim_bg_color_2
 for {@anim_text_x} = 0 to 15
-   //Flash background alternating betwen two colors
+   //Flash background alternating between two colors
    if {@anim_text_x} - int({@anim_text_x} / 2) * 2 = 1 then {@color_background} = {@anim_bg_color_1}:goto {#anim_text_set}
    
    {#anim_text_skip}
@@ -201,8 +190,7 @@ for {@anim_text_x} = 0 to 15
    gosub {#set_background_color}
 
    //Animated text
-   {@cursor_x} = {@anim_text_x}:{@cursor_y} = 12
-   gosub {#set_cursor_position}
+   #call set_cursor_position, {@anim_text_x}, 12
    print " ";{@anim_text$};
 next
 return
