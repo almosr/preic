@@ -168,9 +168,9 @@ class Optimiser(
             }
 
             //Safe to join lines
-            //When there is only a line label in the current line then
+            //When there is only a line label or line number in the current line then
             //separate the lines by space otherwise by semicolon (:).
-            val separator = if (currentContent.matches(JOIN_LINE_ONLY_LINE_LABEL)) {
+            val separator = if (currentContent.matches(JOIN_LINE_ONLY_LINE_LABEL_OR_NUMBER)) {
                 " "
             } else {
                 ":"
@@ -219,7 +219,7 @@ class Optimiser(
 
         private val JOIN_LINE_SPECIAL_COMMANDS = listOf("goto", "go to", "if", "then", "return", "rem", "end")
         private val JOIN_LINE_STARTS_WITH_REGEX = Regex("^(\\{[$LABEL_PREFIX_LINE|$LABEL_PREFIX_LITERAL]+|[0-9]+).*")
-        private val JOIN_LINE_ONLY_LINE_LABEL = Regex("^\\{$LABEL_PREFIX_LINE[^}]*}$")
+        private val JOIN_LINE_ONLY_LINE_LABEL_OR_NUMBER = Regex("^(\\{$LABEL_PREFIX_LINE[^}]*}|[0-9]+)\\s*$")
 
         private val REMOVE_REM_COMMANDS_REGEX = Regex("(^[0-9]*rem|[\\s:]rem)")
         private val REMOVE_GOTO_COMMANDS_AFTER_THEN_OR_ELSE_REGEX = Regex("(then|else)\\s*(go\\s*to)")
