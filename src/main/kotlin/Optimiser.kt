@@ -13,6 +13,7 @@ class Optimiser(
         source.removeRemCommands()
             .removeGotoAfterThenOrElse()
             .simplifyNonZeroInIf()
+            .replaceZeroByDot()
             .joinLines()
 
     fun optimiseWhiteSpace(source: List<SourceLineWithNumber>): List<SourceLineWithNumber> {
@@ -129,6 +130,22 @@ class Optimiser(
         }
     }
 
+    private fun List<SourceLine>.replaceZeroByDot(): List<SourceLine> {
+        if (!optimisationFlags.contains(OptimisationFlag.REPLACE_ZERO_WITH_DOT)) {
+            //Replace zero optim is off, return original source without any change
+            return this
+        }
+
+        return ZERO_NUMERIC_REGEX.processAllItems(this) { content, item ->
+            //Replace consecutive zero numeric literals by dot (.)
+            content.replace(
+                item.range.first,
+                item.range.last + 1,
+                "."
+            )
+        }
+    }
+
     private fun List<SourceLine>.joinLines(): List<SourceLine> {
         if (!optimisationFlags.contains(OptimisationFlag.JOIN_LINES)) {
             //Join lines optim is off, return original source without any change
@@ -225,6 +242,7 @@ class Optimiser(
         private val REMOVE_GOTO_COMMANDS_AFTER_THEN_OR_ELSE_REGEX = Regex("(then|else)\\s*(go\\s*to)")
 
         private val SIMPLIFY_NON_ZERO_IN_IF_REGEX = Regex("if\\s*([a-z][a-z0-9]??)\\s*<\\s*>\\s*0\\s*then")
+        private val ZERO_NUMERIC_REGEX = Regex("(?<![0-9a-zA-Z])0+(?!\\.)")
     }
 
 }

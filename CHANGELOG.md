@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.5.0] - unreleased
 
+### Added
+
+- Optimisation `0` for changing `0` numeric literals to `.` that is parsed faster by the interpreter. (Thanks to Csaba
+  "Csabo" Pankaczy for the idea.)
+
 ### Fixed
 
 - Useless semicolon (`:`) will not be added to the beginning of a joined line when previous line contains a line number

@@ -58,12 +58,12 @@ Here is an example of a processed BASIC source (partial with all optimisations t
 
 ```
 ...
-3 pokea+1,113:pokea+2,81:pokec+2,i:pokea-1,32:pokea-40,32:ifd=0then6
-4 ifpeek(d)<>32thene=e+1:f=f-1:iff=0then28
-5 poked,83:poked-40,32:pokeg,j:d=d+40:g=g+40:ifd-h>1000thenpoked-40,32:d=0
+3 pokea+1,113:pokea+2,81:pokec+2,i:pokea-1,32:pokea-40,32:ifd=.then6
+4 ifpeek(d)<>32thene=e+1:f=f-1:iff=.then27
+5 poked,83:poked-40,32:pokeg,j:d=d+40:g=g+40:ifd-h>1000thenpoked-40,32:d=.
 6 k=k-1:ifkthen8
-7 k=l:a=a+1:c=c+1:ifpeek(a+2)=160then27
-8 geta$:ifa$<>" "ord<>0then10
+7 k=l:a=a+1:c=c+1:ifpeek(a+2)=160then26
+8 geta$:ifa$<>" "ord<>.then10
 ...
 ```
 
@@ -161,7 +161,9 @@ Parameters are:
       variable names.
 
 - `-o <optim flags>` - optional optimisation flags, when set then relevant processing will be completed on the output:
-    * `i` - Simplify variable comparison against non-zero in IF statement to the variable itself. This optimisation is
+    * `0` - replace `0` numeric literals by `.` that is parsed faster by the interpreter. Only numeric `0` will be
+      replaced, 0 character inside string literals or after `REM` commands will not be affected.
+    * `i` - simplify variable comparison against non-zero in IF statement to the variable itself. This optimisation is
       applied to simple variable checks only without any arithmetics inside the `IF` statement.
     * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
       fewer lines make the program run faster.

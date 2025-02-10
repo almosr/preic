@@ -29,6 +29,11 @@ data class ProcessingParameters(
  */
 enum class OptimisationFlag(val commandLineFlag: Char, val description: String) {
 
+    REPLACE_ZERO_WITH_DOT(
+        '0',
+        "Replace `0` numeric literals by `.` that is parsed faster by the interpreter."
+    ),
+
     SIMPLIFY_VARIABLE_CHECK_IN_IF(
         'i',
         "Simplify variable comparison against non-zero in IF statement to the variable itself."
