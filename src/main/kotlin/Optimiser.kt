@@ -154,51 +154,48 @@ class Optimiser(
 
         val output = mutableListOf<SourceLine>()
 
-        var currentLine: SourceLine? = null
-        forEach { line ->
+        var accumulatedLines: SourceLine? = null
+        forEach { currentLine ->
 
-            //If the current line is too long already,
-            //or there is no line processed yet,
-            //or there is a line or literal label or line number at the beginning,
-            //or there is any special command somewhere in the current line already?
-            val currentContent = currentLine?.content ?: ""
-
-            //Does this line start with label?
-            if (line.content.matches(JOIN_LINE_STARTS_WITH_REGEX)) {
-                //Not safe to join, dump accumulated content and replace it with this line
-                currentLine?.let { output.add(it) }
-                currentLine = line
+            //When no accumulated lines yet then current line will be the first content.
+            val lines = accumulatedLines ?: let {
+                accumulatedLines = currentLine
                 return@forEach
             }
 
-            //Can we add this line to the accumulated content?
-            //We can't when no content yet, or accumulated content is too long already,
-            //or it contains special commands which can derail the execution.
-            if (currentLine == null ||
-                currentContent.length > MAX_BASIC_SOURCE_LINE_LENGTH ||
-                JOIN_LINE_SPECIAL_COMMANDS.any { currentContent.removeQuotedContent().contains(it) }
+            //Can we add the current line to the accumulated content?
+            //We can't add it when:
+            // 1. accumulated content is too long already;
+            // 2. the previously added line ends with an open string constant;
+            // 3. accumulated content contains special commands which can derail the execution;
+            // 4. current line starts with label.
+            if (lines.content.length > MAX_BASIC_SOURCE_LINE_LENGTH ||
+                lines.content.isInsideDoubleQuotes() ||
+                JOIN_LINE_SPECIAL_COMMANDS.any { lines.content.removeQuotedContent().contains(it) } ||
+                currentLine.content.matches(JOIN_LINE_STARTS_WITH_REGEX)
             ) {
-                //Close previous accumulated content and start a new one
-                currentLine?.let { output.add(it) }
-                currentLine = line
+                //Close previous accumulated content and start a new one with the current line.
+                output.add(lines)
+                accumulatedLines = currentLine
                 return@forEach
             }
 
-            //Safe to join lines
             //When there is only a line label or line number in the current line then
             //separate the lines by space otherwise by semicolon (:).
-            val separator = if (currentContent.matches(JOIN_LINE_ONLY_LINE_LABEL_OR_NUMBER)) {
+            val separator = if (lines.content.matches(JOIN_LINE_ONLY_LINE_LABEL_OR_NUMBER)) {
                 " "
             } else {
                 ":"
             }
-            currentLine = currentLine!!.copy(
-                content = "$currentContent$separator${line.content}"
-            )
 
+            //Safe to join lines, merge current line content with previously accumulated lines.
+            accumulatedLines = lines.copy(
+                content = "${lines.content}$separator${currentLine.content}"
+            )
         }
 
-        currentLine?.let { output.add(it) }
+        //Output any remaining accumulated lines
+        accumulatedLines?.let { output.add(it) }
 
         return output
     }
