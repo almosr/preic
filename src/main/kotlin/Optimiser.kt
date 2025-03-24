@@ -16,14 +16,18 @@ class Optimiser(
             .replaceZeroByDot()
             .joinLines()
 
-    fun optimiseWhiteSpace(source: List<SourceLineWithNumber>): List<SourceLineWithNumber> {
+    fun finalise(source: List<SourceLineWithNumber>): List<SourceLineWithNumber> =
+        source.optimiseWhiteSpace()
+            .removeClosingDoubleQuotes()
+
+    private fun List<SourceLineWithNumber>.optimiseWhiteSpace(): List<SourceLineWithNumber> {
         //Is white-space optimisation enabled?
         if (!optimisationFlags.contains(OptimisationFlag.REMOVE_WHITE_SPACE)) {
             //Not enabled, don't change the line
-            return source
+            return this
         }
 
-        return source.map { line ->
+        return map { line ->
 
             val lineContent = line.sourceLine.content
 
@@ -198,6 +202,26 @@ class Optimiser(
         accumulatedLines?.let { output.add(it) }
 
         return output
+    }
+
+    private fun List<SourceLineWithNumber>.removeClosingDoubleQuotes(): List<SourceLineWithNumber> {
+        if (!optimisationFlags.contains(OptimisationFlag.REMOVE_CLOSING_DOUBLE_QUOTES)) {
+            //Remove closing double quotes optim is off, return original source without any change
+            return this
+        }
+
+        return map { line ->
+            val lineContent = line.sourceLine.content
+
+            //When the line content does not end with double quote or at the end it
+            //remains inside a string constant then leave it in original state.
+            if (!lineContent.endsWith("\"") || lineContent.isInsideDoubleQuotes()) {
+                line
+            } else {
+                //Remove last character that is the closing double quote.
+                line.copy(sourceLine = line.sourceLine.copy(content = lineContent.dropLast(1)))
+            }
+        }
     }
 
     //Process each instance of an item that is found by using a Regex expression in all lines.

@@ -41,7 +41,12 @@ enum class OptimisationFlag(val commandLineFlag: Char, val description: String) 
 
     JOIN_LINES(
         'j',
-        "Join BASIC lines, when set then processing attempts to join as many lines as safely possible. "
+        "Join BASIC lines, when set then processing attempts to join as many lines as safely possible."
+    ),
+
+    REMOVE_CLOSING_DOUBLE_QUOTES(
+        'q',
+        "Remove closing double quotes from end of lines to save memory and increase parsing speed."
     ),
 
     REMOVE_REM_COMMANDS(

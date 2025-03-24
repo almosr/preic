@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.6.0] - unreleased
 
+### Added
+
+- Optimisation `q` for removing closing double quotes from end of lines.
+
 ### Fixed
 
 - Fixed line joining to skip lines that end with a string constant without closing the double quote pair.

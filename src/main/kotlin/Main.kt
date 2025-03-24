@@ -30,8 +30,8 @@ fun main(args: Array<String>) {
         //Assign BASIC line numbers to source lines
         val numberedSource = LineNumberAssigner(labels).execute(optimisedSource)
 
-        //Optimise white space after all processing is done
-        val finalisedSource = optimiser.optimiseWhiteSpace(numberedSource)
+        //Optimise white space and double quotes after all other processing is done
+        val finalisedSource = optimiser.finalise(numberedSource)
 
         //Write source to output
         SourceWriter(outputFile).execute(finalisedSource)
