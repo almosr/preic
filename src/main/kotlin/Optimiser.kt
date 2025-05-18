@@ -18,6 +18,7 @@ class Optimiser(
 
     fun finalise(source: List<SourceLineWithNumber>): List<SourceLineWithNumber> =
         source.optimiseWhiteSpace()
+            .removeDataStringDoubleQuotes()
             .removeClosingDoubleQuotes()
 
     private fun List<SourceLineWithNumber>.optimiseWhiteSpace(): List<SourceLineWithNumber> {
@@ -204,6 +205,115 @@ class Optimiser(
         return output
     }
 
+    private fun List<SourceLineWithNumber>.removeDataStringDoubleQuotes(): List<SourceLineWithNumber> {
+        if (!optimisationFlags.contains(OptimisationFlag.REMOVE_DATA_STRING_DOUBLE_QUOTES)) {
+            //Remove data string double quotes optim is off, return original source without any change
+            return this
+        }
+
+        return map { line ->
+            var lineContent = line.sourceLine.content
+            val newContent = mutableListOf<String>()
+
+            //When the line starts with line number and/or white space then copy that to output right away
+            //and remove it from processing.
+            val lineStarts = STARTING_LINE_NUMBER_AND_WHITE_SPACE_REGEX.findAll(lineContent)
+            lineStarts.firstOrNull()?.let {
+                newContent.add(it.value)
+                lineContent = lineContent.substring(it.range.last + 1)
+            }
+
+            //Scan through line, try to find DATA commands and process them
+            while (lineContent.isNotEmpty()) {
+                val result = StringBuilder()
+                var processed = 0
+
+                if (STARTS_WITH_DATA_REGEX.matches(lineContent)) {
+                    //DATA command found
+                    val currentString = StringBuilder()
+                    var inString = false
+
+                    //Walk through the line content until the end (or until colon found)
+                    for (index in lineContent.indices) {
+                        val char = lineContent[index]
+                        processed++
+
+                        when {
+
+                            //When double quotes found then turn in-string mode on/off
+                            char == '"' -> {
+                                inString = !inString
+
+                                currentString.append(char)
+
+                                //Just finished the string? Then process it.
+                                if (!inString) {
+                                    //Double quotes can be removed only when the string does not start with white space and
+                                    //does not contain comma or colon characters.
+                                    if (!currentString.matches(NOT_SAFE_DATA_STRING_REGEX)) {
+                                        //Safe string, remove double quotes
+                                        currentString.deleteAt(0)
+                                        currentString.deleteAt(currentString.length - 1)
+                                    }
+
+                                    //Add string to output
+                                    result.append(currentString)
+                                    currentString.clear()
+                                }
+                            }
+
+                            //Inside string simply copy character
+                            inString -> currentString.append(char)
+
+                            //Not inside string, copy character and check for end of DATA command
+                            else -> {
+                                result.append(char)
+
+                                //When colon character found outside of string then DATA command ends, stop processing
+                                if (char == ':') {
+                                    break
+                                }
+                            }
+                        }
+                    }
+
+                } else {
+
+                    //Not DATA command at the beginning of the line, try to find colon for next iteration
+                    var inString = false
+
+                    //Walk through the line content until the end (or until colon found)
+                    for (index in lineContent.indices) {
+                        val char = lineContent[index]
+                        processed++
+
+                        //Copy current character to output
+                        result.append(char)
+
+                        //When double quotes found then turn in-string mode on/off
+                        if (char == '"') {
+                            inString = !inString
+                        }
+
+                        //When not inside string and colon character found then stop iteration
+                        if (!inString && char == ':') {
+                            break
+                        }
+                    }
+                }
+
+                //Remove processed characters from processing
+                lineContent = lineContent.substring(processed)
+
+                //Add copied characters to new content
+                newContent.add(result.toString())
+            }
+
+            //Modify line content with new value
+            line.copy(sourceLine = line.sourceLine.copy(content = newContent.joinToString("")))
+        }
+    }
+
     private fun List<SourceLineWithNumber>.removeClosingDoubleQuotes(): List<SourceLineWithNumber> {
         if (!optimisationFlags.contains(OptimisationFlag.REMOVE_CLOSING_DOUBLE_QUOTES)) {
             //Remove closing double quotes optim is off, return original source without any change
@@ -264,6 +374,10 @@ class Optimiser(
 
         private val SIMPLIFY_NON_ZERO_IN_IF_REGEX = Regex("if\\s*([a-z][a-z0-9]??)\\s*<\\s*>\\s*0\\s*then")
         private val ZERO_NUMERIC_REGEX = Regex("(?<![0-9a-zA-Z])0+(?!\\.)")
+
+        private val STARTING_LINE_NUMBER_AND_WHITE_SPACE_REGEX = Regex("^[0-9]*\\s*")
+        private val STARTS_WITH_DATA_REGEX = Regex("^data.*")
+        private val NOT_SAFE_DATA_STRING_REGEX = Regex("^\"\\s+.*|.*,+.*|.*:+.*|.*\\{.*")
     }
 
 }

@@ -167,10 +167,13 @@ Parameters are:
       applied to simple variable checks only without any arithmetics inside the `IF` statement.
     * `j` - join BASIC lines, when set then processing attempts to join as many lines as safely possible. Longer and
       fewer lines make the program run faster.
-  * `q` - remove closing double quotes from end of lines to save memory and increase parsing speed. This optimisation
-    will be applied after line joining (when enabled) because lines cannot be joined to lines that end with a string
-    without closing double quote. Fewer lines are always better than what can be saved with omitting closing double
-    quotes.
+    * `q` - remove closing double quotes from end of lines to save memory and increase parsing speed. This optimisation
+      will be applied after line joining (when enabled) because lines cannot be joined to lines that end with a string
+      without closing double quote. Fewer lines are always better than what can be saved with omitting closing double
+      quotes.
+    * `s` - remove double quotes from strings in DATA lines. Double quotes are not needed for all strings, only those
+      must be wrapped into double quotes which contain leading spaces, comma (`,`), colon (`:`) or escaped (`{}`)
+      characters.
     * `r` - remove `REM` BASIC commands from source to make it run faster and occupy less memory.
     * `t` - remove `GOTO` command after `THEN` and `ELSE` commands which is unnecessary for jumping to a line.
     * `w` - remove white space from lines where not required, white space remains unchanged after `REM` command and
