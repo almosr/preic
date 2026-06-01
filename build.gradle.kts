@@ -34,6 +34,7 @@ tasks.jar {
 //build output and additional files
 tasks.register<Zip>("createRelease") {
 
+    description = "Create release archive"
     archiveFileName.set("release_v${version}.zip")
     destinationDirectory.set(file("build"))
 

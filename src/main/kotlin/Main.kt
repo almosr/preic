@@ -91,10 +91,10 @@ private fun getCommandLineParameters(args: Array<String>): ProcessingParameters 
     } while (name != null)
 
     //Last parameter (if exists) is output file name
-    val outputFileName = if (params.size >= 1) params.removeLast() else null
+    val outputFileName = if (params.isNotEmpty()) params.removeLast() else null
 
     //If any parameters left those are unknown to the tool
-    if (params.size != 0) {
+    if (params.isNotEmpty()) {
         throw Exception("Unrecognized command line parameters: ${params.joinToString(" ")}")
     }
 
